@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Calcul du coût matière - Boulangerie (₱)</title>
+<style>
+    body {
+        font-family: Arial, Helvetica, sans-serif;
+        background: #fdf6ec;
+        color: #3b2c1a;
+        margin: 0;
+        padding: 30px;
+    }
+    h1 { color: #7a4a1f; margin-bottom: 5px; }
+    p.sous-titre { margin-top: 0; color: #6b5b45; }
+    .carte {
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        padding: 20px;
+        max-width: 950px;
+    }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 10px; }
+    th, td { border: 1px solid #e0d3bd; padding: 8px; text-align: center; }
+    th { background: #7a4a1f; color: #fff; font-weight: normal; }
+    td input[type="text"], td input[type="number"] {
+        width: 90%; padding: 5px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;
+    }
+    td select { padding: 5px; border-radius: 4px; border: 1px solid #ccc; }
+    tr:nth-child(even) td { background: #fbf3e6; }
+    .cout-cell { font-weight: bold; background: #f0e6d2 !important; }
+    .totaux {
+        max-width: 950px; background: #fff; border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 20px; margin-top: 20px;
+    }
+    .totaux table { margin: 0; }
+    .totaux td { text-align: left; border: none; padding: 6px 4px; }
+    .total-final { font-size: 1.3em; font-weight: bold; color: #7a4a1f; }
+    .nb-pieces { margin-top: 10px; }
+    .nb-pieces input { width: 100px; padding: 5px; }
+    button {
+        background: #7a4a1f; color: #fff; border: none; padding: 8px 18px;
+        border-radius: 6px; cursor: pointer; font-size: 0.9em; margin-top: 5px;
+    }
+    button:hover { background: #5e3814; }
+</style>
+</head>
+<body>
+
+<h1>🥖 Calcul du coût matière</h1>
+<p class="sous-titre">Tout se calcule automatiquement dès que tu tapes une valeur. Aucune installation nécessaire — ouvre juste ce fichier dans ton navigateur.</p>
+
+<div class="carte">
+    <table id="tableau">
+        <thead>
+            <tr>
+                <th>Ingrédient</th>
+                <th>Type de prix</th>
+                <th>Prix unitaire (₱)</th>
+                <th>Quantité utilisée</th>
+                <th>Coût (₱)</th>
+            </tr>
+        </thead>
+        <tbody id="corpsTableau"></tbody>
+    </table>
+
+    <div class="nb-pieces">
+        <label>Nombre de pièces produites avec cette fournée (optionnel) :
+            <input type="number" step="1" min="0" id="nbPieces" value="0">
+        </label>
+    </div>
+</div>
+
+<div class="totaux">
+    <table>
+        <tr>
+            <td>Coût matière total :</td>
+            <td class="total-final"><span id="totalGeneral">₱ 0,00</span></td>
+        </tr>
+        <tr id="ligneParPiece" style="display:none;">
+            <td>Coût matière par pièce :</td>
+            <td class="total-final"><span id="coutParPiece">₱ 0,00</span></td>
+        </tr>
+    </table>
+</div>
+
+<script>
+    // Ingrédients de départ (exemples typiques de boulangerie)
+    const ingredients = [
+        { nom: "Farine",             type: "kg",    prix: 45,  qte: 0 },
+        { nom: "Sucre",              type: "kg",    prix: 60,  qte: 0 },
+        { nom: "Beurre",             type: "kg",    prix: 380, qte: 0 },
+        { nom: "Œufs",               type: "unite", prix: 8,   qte: 0 },
+        { nom: "Levure boulangère",  type: "kg",    prix: 250, qte: 0 },
+        { nom: "Lait",               type: "kg",    prix: 90,  qte: 0 },
+        { nom: "Sel",                type: "kg",    prix: 25,  qte: 0 },
+        { nom: "Chocolat",           type: "kg",    prix: 450, qte: 0 },
+        { nom: "Levure chimique",    type: "unite", prix: 5,   qte: 0 },
+        { nom: "Sachets/emballage",  type: "unite", prix: 3,   qte: 0 }
+    ];
+
+    const corps = document.getElementById('corpsTableau');
+
+    function formatPeso(nombre) {
+        return "₱ " + nombre.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function creerLigne(item, index) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><input type="text" value="${item.nom}" data-index="${index}" data-champ="nom"></td>
+            <td>
+                <select data-index="${index}" data-champ="type">
+                    <option value="kg" ${item.type === 'kg' ? 'selected' : ''}>₱ / kg</option>
+                    <option value="unite" ${item.type === 'unite' ? 'selected' : ''}>₱ / unité</option>
+                </select>
+            </td>
+            <td><input type="number" step="0.01" min="0" value="${item.prix}" data-index="${index}" data-champ="prix"></td>
+            <td><input type="number" step="0.001" min="0" value="${item.qte}" data-index="${index}" data-champ="qte"></td>
+            <td class="cout-cell" id="cout-${index}">${formatPeso(0)}</td>
+        `;
+        return tr;
+    }
+
+    function construireTableau() {
+        corps.innerHTML = '';
+        ingredients.forEach((item, index) => {
+            corps.appendChild(creerLigne(item, index));
+        });
+    }
+
+    function recalculer() {
+        let total = 0;
+        ingredients.forEach((item, index) => {
+            const cout = (parseFloat(item.qte) || 0) * (parseFloat(item.prix) || 0);
+            document.getElementById(`cout-${index}`).textContent = formatPeso(cout);
+            total += cout;
+        });
+        document.getElementById('totalGeneral').textContent = formatPeso(total);
+
+        const nbPieces = parseFloat(document.getElementById('nbPieces').value) || 0;
+        const ligneParPiece = document.getElementById('ligneParPiece');
+        if (nbPieces > 0) {
+            document.getElementById('coutParPiece').textContent = formatPeso(total / nbPieces);
+            ligneParPiece.style.display = '';
+        } else {
+            ligneParPiece.style.display = 'none';
+        }
+    }
+
+    corps.addEventListener('input', (e) => {
+        const index = e.target.getAttribute('data-index');
+        const champ = e.target.getAttribute('data-champ');
+        if (index === null) return;
+        ingredients[index][champ] = e.target.value;
+        recalculer();
+    });
+
+    corps.addEventListener('change', (e) => {
+        const index = e.target.getAttribute('data-index');
+        const champ = e.target.getAttribute('data-champ');
+        if (index === null) return;
+        ingredients[index][champ] = e.target.value;
+        recalculer();
+    });
+
+    document.getElementById('nbPieces').addEventListener('input', recalculer);
+
+    construireTableau();
+    recalculer();
+</script>
+
+</body>
+</html>
