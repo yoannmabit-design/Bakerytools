@@ -13,14 +13,19 @@
     th, td { border: 1px solid #e0d3bd; padding: 8px; text-align: left; }
     th { background: #7a4a1f; color: #fff; }
     input[type="text"], input[type="number"], select { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-    .btn { background: #7a4a1f; color: #fff; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 15px; }
+    .btn { background: #7a4a1f; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; margin-right: 5px; }
     .btn-sup { background: #c0392b; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+    .status-bar { background: #efe0c8; padding: 8px 12px; border-radius: 6px; margin-bottom: 15px; font-size: 0.85em; font-weight: bold; color: #7a4a1f; }
 </style>
+
+<!-- Firebase SDK Compat Version -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
 <h1>🏷️ Gestion de la Base Ingrédients & Prix (₱)</h1>
-<p>Les prix modifiés ici s'appliqueront automatiquement au calcul des coûts par pièce.</p>
+<div class="status-bar" id="statusBar">🔄 Connexion à Firebase...</div>
 
 <div class="carte">
     <table>
@@ -36,10 +41,24 @@
     </table>
 
     <button class="btn" onclick="ajouterLigne()">+ Ajouter un ingrédient</button>
-    <button class="btn" style="background:#27ae60;" onclick="sauvegarder()">💾 Enregistrer les prix</button>
+    <button class="btn" style="background:#27ae60;" onclick="sauvegarderCloud()">☁️ Enregistrer sur Firebase</button>
 </div>
 
 <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDuq8KS8M_Z8U7BlSp6MvE-6Y9OYYaDujE",
+      authDomain: "bakertools-ae124.firebaseapp.com",
+      projectId: "bakertools-ae124",
+      storageBucket: "bakertools-ae124.firebasestorage.app",
+      messagingSenderId: "978584667113",
+      appId: "1:978584667113:web:868cc89788aff27717c178",
+      measurementId: "G-KQNS7J2NPX"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    db.enablePersistence().catch(() => console.log("Mode hors-ligne actif."));
+
     const ingredientsParDefaut = [
         { nom: "Farine de blé", type: "kg", prix: 45 },
         { nom: "Farine de seigle", type: "kg", prix: 55 },
@@ -56,7 +75,22 @@
         { nom: "Mix de graines", type: "kg", prix: 200 }
     ];
 
-    let listeIngredients = JSON.parse(localStorage.getItem('bakeryMasterIngredients')) || ingredientsParDefaut;
+    let listeIngredients = [];
+
+    function chargerDonnees() {
+        db.collection("ingredients").doc("master").onSnapshot((doc) => {
+            if (doc.exists && doc.data().items) {
+                listeIngredients = doc.data().items;
+                document.getElementById('statusBar').textContent = "✅ Synchronisé en temps réel avec le Cloud Firebase";
+            } else {
+                listeIngredients = ingredientsParDefaut;
+                sauvegarderCloud();
+            }
+            afficherTableau();
+        }, (err) => {
+            document.getElementById('statusBar').textContent = "⚡ Mode Hors-Ligne (données locales)";
+        });
+    }
 
     function afficherTableau() {
         const corps = document.getElementById('corpsTableau');
@@ -78,26 +112,17 @@
         });
     }
 
-    function modifier(index, champ, valeur) {
-        listeIngredients[index][champ] = valeur;
+    function modifier(index, champ, valeur) { listeIngredients[index][champ] = valeur; }
+    function ajouterLigne() { listeIngredients.push({ nom: "Nouvel Ingrédient", type: "kg", prix: 0 }); afficherTableau(); }
+    function supprimer(index) { listeIngredients.splice(index, 1); afficherTableau(); }
+
+    function sauvegarderCloud() {
+        db.collection("ingredients").doc("master").set({ items: listeIngredients })
+            .then(() => alert("Données synchronisées sur tous vos appareils !"))
+            .catch((err) => alert("Erreur d'enregistrement : " + err.message));
     }
 
-    function ajouterLigne() {
-        listeIngredients.push({ nom: "Nouvel Ingrédient", type: "kg", prix: 0 });
-        afficherTableau();
-    }
-
-    function supprimer(index) {
-        listeIngredients.splice(index, 1);
-        afficherTableau();
-    }
-
-    function sauvegarder() {
-        localStorage.setItem('bakeryMasterIngredients', JSON.stringify(listeIngredients));
-        alert("Base de prix mise à jour avec succès !");
-    }
-
-    afficherTableau();
+    window.addEventListener('DOMContentLoaded', chargerDonnees);
 </script>
 
 </body>
