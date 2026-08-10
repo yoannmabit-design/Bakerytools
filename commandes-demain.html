@@ -3,21 +3,32 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Analyse des Commandes de Demain</title>
+<title>Ordre de Fabrication & Marges</title>
 <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #fdf6ec; color: #3b2c1a; padding: 20px; margin: 0; }
-    h1 { color: #7a4a1f; font-size: 1.4rem; margin-bottom: 5px; }
-    .carte { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 15px; max-width: 950px; margin-bottom: 20px; }
-    table { border-collapse: collapse; width: 100%; font-size: 0.85em; background: #fff; }
-    th, td { border: 1px solid #e0d3bd; padding: 8px; text-align: center; }
-    th { background: #7a4a1f; color: #fff; }
-    select, input[type="number"] { padding: 6px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; width: 100%; text-align: center; }
-    select { text-align: left; }
-    .btn { background: #7a4a1f; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; margin-right: 5px; }
-    .btn-sup { background: #c0392b; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
-    .status-bar { background: #efe0c8; padding: 8px 12px; border-radius: 6px; margin-bottom: 15px; font-size: 0.85em; font-weight: bold; color: #7a4a1f; }
-    .total-box { background: #e8f8f5; color: #27ae60; font-weight: bold; font-size: 1.1em; padding: 10px; border-radius: 6px; text-align: right; margin-top: 10px; }
-    .badge-total-qte { background: #efe0c8; color: #7a4a1f; font-weight: bold; padding: 4px 8px; border-radius: 4px; }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: #f4f6f8; color: #2c3e50; margin: 0; padding: 15px; padding-bottom: 80px; }
+    
+    .header-title { text-align: center; color: #1a2a3a; font-size: 1.3rem; margin-top: 5px; margin-bottom: 15px; font-weight: 700; }
+    
+    .toolbar { display: flex; gap: 10px; margin-bottom: 15px; }
+    .btn-sort { flex: 1; background: #ffffff; border: 1px solid #dcdfe6; padding: 10px; border-radius: 10px; font-weight: 600; color: #3a4b5c; font-size: 0.9rem; cursor: pointer; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
+    .btn-sort:active { background: #eef2f7; }
+    
+    .status-bar { background: #e8f4f8; border-left: 4px solid #27ae60; padding: 8px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; color: #2c3e50; margin-bottom: 15px; }
+
+    .card-list { display: flex; flex-direction: column; gap: 10px; }
+    .card { background: #ffffff; border-radius: 12px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 6px rgba(0,0,0,0.04); border-left: 5px solid #10ac84; }
+    
+    .product-name { font-weight: 700; font-size: 1.05rem; color: #1e293b; flex-grow: 1; padding-right: 10px; }
+    .product-cost { font-size: 0.75rem; color: #64748b; font-weight: normal; display: block; margin-top: 2px; }
+
+    .counter-group { display: flex; align-items: center; background: #e6f7f2; border-radius: 8px; padding: 3px; border: 1px solid #10ac84; }
+    .btn-counter { background: #10ac84; color: white; border: none; width: 36px; height: 36px; border-radius: 6px; font-size: 1.2rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .btn-counter:active { background: #0e9f7a; transform: scale(0.95); }
+    .counter-value { width: 42px; text-align: center; font-weight: bold; font-size: 1.1rem; color: #0e9f7a; border: none; background: transparent; }
+
+    .footer-total { position: fixed; bottom: 15px; left: 15px; right: 15px; background: #22313f; color: #ffffff; border-radius: 10px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+    .footer-total-val { font-size: 1.2rem; color: #10ac84; }
 </style>
 
 <!-- Firebase SDK Compat Version -->
@@ -26,29 +37,23 @@
 </head>
 <body>
 
-<h1>📦 Commandes & Production du Lendemain</h1>
-<div class="status-bar" id="statusBar">🔄 Extraction des données Firebase...</div>
+<div class="header-title">Ordre de Fabrication</div>
 
-<div class="carte">
-    <table>
-        <thead>
-            <tr>
-                <th style="width: 30%;">Produit Commandé</th>
-                <th style="width: 15%;">Qte Base</th>
-                <th style="width: 15%;">Qte Add.</th>
-                <th style="width: 12%;">Total Pcs</th>
-                <th style="width: 13%;">Coût Unitaire</th>
-                <th style="width: 15%;">Coût Total (₱)</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody id="corpsTableau"></tbody>
-    </table>
+<div class="status-bar" id="statusBar">🔄 Connexion à Firebase...</div>
 
-    <button class="btn" onclick="ajouterLigne()">+ Ajouter un produit</button>
-    <button class="btn" style="background:#27ae60;" onclick="sauvegarderCommandes()">☁️ Enregistrer la fournée</button>
+<div class="toolbar">
+    <button class="btn-sort" onclick="trier('az')">Produit AZ</button>
+    <button class="btn-sort" onclick="trier('qte')">Quantité ▼</button>
+</div>
 
-    <div class="total-box" id="totalGeneral">Coût total matière de la fournée : ₱ 0,00</div>
+<div class="card-list" id="conteneurCartes"></div>
+
+<div class="footer-total">
+    <span>TOTAL PIÈCES</span>
+    <div>
+        <span class="footer-total-val" id="totalPieces">0</span>
+        <span style="font-size:0.75rem; color:#cbd5e1; display:block; text-align:right;" id="totalCout">₱ 0,00</span>
+    </div>
 </div>
 
 <script>
@@ -67,7 +72,8 @@
 
     let masterIngredients = [];
     let fichesRecettes = [];
-    let commandesDemain = [];
+    let quantities = {}; // { "Croissant": 12, ... }
+    let currentSort = 'az';
 
     function formatPeso(nombre) {
         return "₱ " + nombre.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -75,7 +81,6 @@
 
     function calculerCoutUnitaire(recette) {
         if (!recette || !recette.ingredients || recette.nbPieces <= 0) return 0;
-
         let coutTotal = 0;
         recette.ingredients.forEach(ing => {
             const masterIng = masterIngredients.find(m => m.nom.toLowerCase().trim() === ing.nom.toLowerCase().trim());
@@ -83,96 +88,100 @@
             const type = masterIng ? masterIng.type : 'kg';
             coutTotal += (type === 'kg') ? (ing.qte / 1000) * prix : ing.qte * prix;
         });
-
         return coutTotal / recette.nbPieces;
     }
 
     function initialiser() {
+        // 1. Charger Ingrédients
         db.collection("ingredients").doc("master").onSnapshot(doc => {
             if (doc.exists) masterIngredients = doc.data().items || [];
-            afficherTableau();
+            afficherCartes();
         });
 
+        // 2. Charger Recettes (Génère la liste exacte des cartes)
         db.collection("recettes").doc("fiches").onSnapshot(doc => {
             if (doc.exists) {
                 fichesRecettes = doc.data().items || [];
-                document.getElementById('statusBar').textContent = "✅ Synchronisé : " + fichesRecettes.length + " recette(s) rattachée(s)";
+                document.getElementById('statusBar').textContent = "✅ " + fichesRecettes.length + " produits chargés depuis Prix de Revient";
             }
-            afficherTableau();
+            afficherCartes();
         });
 
-        db.collection("production").doc("commandes_demain").onSnapshot(doc => {
-            if (doc.exists && doc.data().items) {
-                commandesDemain = doc.data().items;
-            } else if (commandesDemain.length === 0) {
-                commandesDemain = [{ nom: "", qteBase: 0, qteAdd: 0 }];
+        // 3. Charger Quantités enregistrées
+        db.collection("production").doc("ordre_du_jour_quantites").onSnapshot(doc => {
+            if (doc.exists && doc.data().values) {
+                quantities = doc.data().values;
             }
-            afficherTableau();
+            afficherCartes();
         });
     }
 
-    function afficherTableau() {
-        const corps = document.getElementById('corpsTableau');
-        corps.innerHTML = '';
-        let grandTotal = 0;
+    function afficherCartes() {
+        const conteneur = document.getElementById('conteneurCartes');
+        conteneur.innerHTML = '';
 
-        commandesDemain.forEach((item, index) => {
-            const recetteTrouvee = fichesRecettes.find(r => r.nom.toLowerCase().trim() === (item.nom || "").toLowerCase().trim());
-            const coutUnitaire = recetteTrouvee ? calculerCoutUnitaire(recetteTrouvee) : 0;
-            
-            const totalPieces = (parseInt(item.qteBase) || 0) + (parseInt(item.qteAdd) || 0);
-            const coutTotalLigne = coutUnitaire * totalPieces;
-            grandTotal += coutTotalLigne;
+        let listeAffichage = [...fichesRecettes];
 
-            let optionsHTML = `<option value="">-- Choisir un produit --</option>`;
-            fichesRecettes.forEach(r => {
-                const estSelectionne = r.nom.toLowerCase().trim() === (item.nom || "").toLowerCase().trim() ? 'selected' : '';
-                optionsHTML += `<option value="${r.nom}" ${estSelectionne}>${r.nom}</option>`;
-            });
+        // Tri dynamique
+        if (currentSort === 'az') {
+            listeAffichage.sort((a, b) => a.nom.localeCompare(b.nom));
+        } else if (currentSort === 'qte') {
+            listeAffichage.sort((a, b) => (quantities[b.nom] || 0) - (quantities[a.nom] || 0));
+        }
 
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>
-                    <select onchange="modifier(${index}, 'nom', this.value)">
-                        ${optionsHTML}
-                    </select>
-                </td>
-                <td>
-                    <input type="number" min="0" value="${item.qteBase || 0}" onchange="modifier(${index}, 'qteBase', parseInt(this.value)||0)">
-                </td>
-                <td>
-                    <input type="number" min="0" value="${item.qteAdd || 0}" onchange="modifier(${index}, 'qteAdd', parseInt(this.value)||0)">
-                </td>
-                <td><span class="badge-total-qte">${totalPieces}</span></td>
-                <td>${formatPeso(coutUnitaire)}</td>
-                <td style="font-weight:bold;">${formatPeso(coutTotalLigne)}</td>
-                <td><button class="btn-sup" onclick="supprimer(${index})">X</button></td>
+        let totalPcs = 0;
+        let totalCoutMatiere = 0;
+
+        listeAffichage.forEach(recette => {
+            const qte = quantities[recette.nom] || 0;
+            const coutUnitaire = calculerCoutUnitaire(recette);
+            const coutLigne = coutUnitaire * qte;
+
+            totalPcs += qte;
+            totalCoutMatiere += coutLigne;
+
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+                <div>
+                    <span class="product-name">${recette.nom}</span>
+                    <span class="product-cost">Coût unit. ${formatPeso(coutUnitaire)}</span>
+                </div>
+                <div class="counter-group">
+                    <button class="btn-counter" onclick="changerQte('${recette.nom.replace(/'/g, "\\'")}', -1)">-</button>
+                    <input type="number" class="counter-value" value="${qte}" onchange="saisirQte('${recette.nom.replace(/'/g, "\\'")}', this.value)" min="0">
+                    <button class="btn-counter" onclick="changerQte('${recette.nom.replace(/'/g, "\\'")}', 1)">+</button>
+                </div>
             `;
-            corps.appendChild(tr);
+            conteneur.appendChild(card);
         });
 
-        document.getElementById('totalGeneral').textContent = "Coût total matière de la fournée : " + formatPeso(grandTotal);
+        document.getElementById('totalPieces').textContent = totalPcs;
+        document.getElementById('totalCout').textContent = "Coût matière total : " + formatPeso(totalCoutMatiere);
     }
 
-    function modifier(index, champ, valeur) {
-        commandesDemain[index][champ] = valeur;
-        afficherTableau();
+    function changerQte(nom, delta) {
+        let actuelle = quantities[nom] || 0;
+        let nouvelle = Math.max(0, actuelle + delta);
+        quantities[nom] = nouvelle;
+        sauvegarderFirebase();
+        afficherCartes();
     }
 
-    function ajouterLigne() {
-        commandesDemain.push({ nom: "", qteBase: 0, qteAdd: 0 });
-        afficherTableau();
+    function saisirQte(nom, val) {
+        quantities[nom] = Math.max(0, parseInt(val) || 0);
+        sauvegarderFirebase();
+        afficherCartes();
     }
 
-    function supprimer(index) {
-        commandesDemain.splice(index, 1);
-        afficherTableau();
+    function trier(mode) {
+        currentSort = mode;
+        afficherCartes();
     }
 
-    function sauvegarderCommandes() {
-        db.collection("production").doc("commandes_demain").set({ items: commandesDemain })
-            .then(() => alert("Commandes du lendemain enregistrées sur Firebase !"))
-            .catch(err => alert("Erreur d'enregistrement : " + err.message));
+    function sauvegarderFirebase() {
+        db.collection("production").doc("ordre_du_jour_quantites").set({ values: quantities })
+            .catch(err => console.log("Erreur de sauvegarde : " + err.message));
     }
 
     window.addEventListener('DOMContentLoaded', initialiser);
