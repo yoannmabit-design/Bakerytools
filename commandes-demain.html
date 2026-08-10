@@ -11,7 +11,7 @@
     table { border-collapse: collapse; width: 100%; font-size: 0.9em; background: #fff; }
     th, td { border: 1px solid #e0d3bd; padding: 8px; text-align: center; }
     th { background: #7a4a1f; color: #fff; }
-    input[type="text"], input[type="number"] { padding: 6px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+    select, input[type="number"] { padding: 6px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; width: 100%; }
     .btn { background: #7a4a1f; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; margin-right: 5px; }
     .btn-sup { background: #c0392b; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
     .status-bar { background: #efe0c8; padding: 8px 12px; border-radius: 6px; margin-bottom: 15px; font-size: 0.85em; font-weight: bold; color: #7a4a1f; }
@@ -25,23 +25,23 @@
 <body>
 
 <h1>📋 Ordre de Fabrication du Jour</h1>
-<div class="status-bar" id="statusBar">🔄 Connexion aux fiches prix de revient...</div>
+<div class="status-bar" id="statusBar">🔄 Chargement des recettes Firebase...</div>
 
 <div class="carte">
     <table>
         <thead>
             <tr>
-                <th>Produit à fabriquer</th>
-                <th>Quantité (pièces)</th>
-                <th>Coût Unitaire (₱)</th>
-                <th>Coût Total Matière (₱)</th>
+                <th style="width: 40%;">Produit (issu des Fiches Recettes)</th>
+                <th style="width: 20%;">Quantité (pièces)</th>
+                <th style="width: 20%;">Coût Unitaire (₱)</th>
+                <th style="width: 20%;">Coût Total Matière (₱)</th>
                 <th>Action</th>
             </tr>
         </thead>
         <tbody id="corpsTableau"></tbody>
     </table>
 
-    <button class="btn" onclick="ajouterLigne()">+ Ajouter un produit</button>
+    <button class="btn" onclick="ajouterLigne()">+ Ajouter un produit à la fournée</button>
     <button class="btn" style="background:#27ae60;" onclick="sauvegarderOF()">☁️ Enregistrer l'OF</button>
 
     <div class="total-box" id="totalGeneral">Coût total de la fournée : ₱ 0,00</div>
@@ -69,22 +69,13 @@
         return "₱ " + nombre.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
-    // Nettoyage de chaîne pour ignorer la casse et les espaces superflus
-    function normaliserTexte(txt) {
-        return txt ? txt.toString().trim().toLowerCase() : "";
-    }
-
-    // Calcul dynamique du coût unitaire depuis les fiches recettes Firebase
-    function obtenirCoutUnitaire(nomProduit) {
-        const nomCible = normaliserTexte(nomProduit);
-        if (!nomCible) return 0;
-
-        const recette = fichesRecettes.find(r => normaliserTexte(r.nom) === nomCible);
+    // Calcul du coût unitaire par pièce d'une recette
+    function calculerCoutUnitaire(recette) {
         if (!recette || !recette.ingredients || recette.nbPieces <= 0) return 0;
 
         let coutTotal = 0;
         recette.ingredients.forEach(ing => {
-            const masterIng = masterIngredients.find(m => normaliserTexte(m.nom) === normaliserTexte(ing.nom));
+            const masterIng = masterIngredients.find(m => m.nom.toLowerCase().trim() === ing.nom.toLowerCase().trim());
             const prix = masterIng ? masterIng.prix : 0;
             const type = masterIng ? masterIng.type : 'kg';
             coutTotal += (type === 'kg') ? (ing.qte / 1000) * prix : ing.qte * prix;
@@ -102,20 +93,19 @@
 
         // 2. Charger Fiches Recettes
         db.collection("recettes").doc("fiches").onSnapshot(doc => {
-            if (doc.exists) fichesRecettes = doc.data().items || [];
-            document.getElementById('statusBar').textContent = "✅ Connecté aux Prix de Revient (" + fichesRecettes.length + " recettes rattachées)";
+            if (doc.exists) {
+                fichesRecettes = doc.data().items || [];
+                document.getElementById('statusBar').textContent = "✅ " + fichesRecettes.length + " recette(s) chargée(s) depuis Prix de Revient";
+            }
             afficherTableau();
         });
 
-        // 3. Charger l'OF enregistre
+        // 3. Charger Ordre de Fabrication du jour
         db.collection("production").doc("ordre_du_jour").onSnapshot(doc => {
             if (doc.exists && doc.data().items) {
                 ordreFabrication = doc.data().items;
             } else if (ordreFabrication.length === 0) {
-                ordreFabrication = [
-                    { nom: "Croissant", qte: 34 },
-                    { nom: "Baguette", qte: 50 }
-                ];
+                ordreFabrication = [{ nom: "", qte: 0 }];
             }
             afficherTableau();
         });
@@ -127,17 +117,28 @@
         let grandTotal = 0;
 
         ordreFabrication.forEach((item, index) => {
-            const coutUnitaire = obtenirCoutUnitaire(item.nom);
+            // Trouver la recette sélectionnée dans la liste extraite
+            const recetteTrouvee = fichesRecettes.find(r => r.nom.toLowerCase().trim() === item.nom.toLowerCase().trim());
+            const coutUnitaire = recetteTrouvee ? calculerCoutUnitaire(recetteTrouvee) : 0;
             const coutTotalLigne = coutUnitaire * (item.qte || 0);
             grandTotal += coutTotalLigne;
+
+            // Génération dynamique des options du menu déroulant
+            let optionsHTML = `<option value="">-- Sélectionner un produit --</option>`;
+            fichesRecettes.forEach(r => {
+                const estSelectionne = r.nom.toLowerCase().trim() === item.nom.toLowerCase().trim() ? 'selected' : '';
+                optionsHTML += `<option value="${r.nom}" ${estSelectionne}>${r.nom}</option>`;
+            });
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>
-                    <input type="text" value="${item.nom}" placeholder="Nom du produit" onchange="modifier(${index}, 'nom', this.value)" style="width:90%;">
+                    <select onchange="modifier(${index}, 'nom', this.value)">
+                        ${optionsHTML}
+                    </select>
                 </td>
                 <td>
-                    <input type="number" min="0" value="${item.qte}" onchange="modifier(${index}, 'qte', parseInt(this.value)||0)" style="width:80px;">
+                    <input type="number" min="0" value="${item.qte}" onchange="modifier(${index}, 'qte', parseInt(this.value)||0)">
                 </td>
                 <td>${formatPeso(coutUnitaire)}</td>
                 <td style="font-weight:bold;">${formatPeso(coutTotalLigne)}</td>
