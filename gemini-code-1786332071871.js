@@ -3,8 +3,8 @@ const FILES_TO_CACHE = [
   './index.html',
   './manifest.json',
   './logo.jpg',
-  './ingredients-master.html',
   './recettes.html',
+  './pain_sans_gluten.html',
   './prix-de-revient.html',
   './commandes-demain.html'
 ];
