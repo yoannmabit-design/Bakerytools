@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head><script type='text/javascript' nonce='cXTwquZlBghKGCu/+Nwzkg==' src='https://contribution.usercontent.google.com/MpOf64O1qbDRmNpZ8cXi9FS3yjJoc6f5vqMnqYVZHu1URSNQH8CUXmS5FaSYdhdamx-IOBlz08-EvlsdG2V_Yekl-RpYhATT12tDfp5izLZjkqEvOl7fJFulX4JL_PbdIHUlYhav5YnDr3FeuWJcFmLqDkvhioasLzvx_8IlQkMMimj2JvHeA1qi43JoTLL1s4W2C1W8XO8I7abfXLIaK6PjMyFMtx-ABfywVzxbvCxeg2gnrkUDL2I3YoHvdMRcfRkangv_7-cbkSZKP22BU7kPC5VAW6V_2ek3rS1zFPe-EsS5nDrVuDevn73LCCeortvzxtPs9PNREtOHt2JzK90jy1rHk39ZqiB_3KUPJJ74WKwXNvezwoaM9sLVIcLbZbzU3q8wENkmF80d2gVEK5wrTxLE3QRcHAQD0rRo7nfTfh3HP-ZnIsweAMy4VpfgXUbq4vaMjJjfW2H5pIWLoCb5roZQAiBq8djo-ODRBb2q9O63tWve1UeNnWbQNVXLp_04M60QMGIZjNSTRkO2fcdxYN_lc9iUaTCKZuvliiVRoMz-KwltcOg8TDAx2aDjbcdOcSzq3E9iMU_DLsP2FIkKQCNzK_dvX85WsITNdNzJDZuQeEpOThUoE4PfNeLPFVlcOzSbk-NXz2bs63xmP297u-3H3jIrkRbZ9kFrDdJ46uj0e0TBbpSFjX0rNBzIZnb2V7uYO8br_PZ2ctwnZ9Gpi-EImQ2Ek9C7p8n1w-W9AAofVwE'></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Calculateur Pain Sans Gluten</title>
+    <style>
+        :root {
+            --bg-color: #f7f5f0;
+            --card-bg: #ffffff;
+            --primary-color: #8c5a2b;
+            --accent-color: #d97724;
+            --text-main: #2d2926;
+            --text-muted: #6e6b68;
+            --border-color: #e2ddd5;
+            --highlight-bg: #fef8f1;
+            --radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.4;
+            padding: 12px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        header h1 {
+            color: var(--primary-color);
+            font-size: 1.4rem;
+            margin-bottom: 4px;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+        }
+
+        .card h2 {
+            font-size: 1.1rem;
+            color: var(--primary-color);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-bottom: 4px;
+        }
+
+        select, input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            background-color: #fafafa;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        select:focus, input[type="number"]:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            background-color: #fff;
+        }
+
+        .btn-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .btn-preset {
+            padding: 10px 4px;
+            background: #f0ebe1;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--primary-color);
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .btn-preset:active {
+            background: var(--accent-color);
+            color: #fff;
+        }
+
+        .totals-summary {
+            display: flex;
+            justify-content: space-between;
+            background: var(--highlight-bg);
+            padding: 10px 12px;
+            border-radius: 8px;
+            margin-top: 12px;
+            font-size: 0.85rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+        }
+
+        th, td {
+            padding: 8px 4px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        td.val {
+            text-align: right;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        tr.highlight {
+            background-color: var(--highlight-bg);
+        }
+
+        tr.highlight td {
+            color: var(--accent-color);
+            border-top: 1px solid var(--accent-color);
+            border-bottom: 1px solid var(--accent-color);
+        }
+
+        .info-box {
+            background-color: #f0f7f4;
+            border-left: 3px solid #2e7d32;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            color: #1b4332;
+            margin-top: 12px;
+            line-height: 1.3;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🌾 Production Pain Sans Gluten</h1>
+        <p>Pâtons de <strong>475 g cru</strong> (~400 g cuit)</p>
+    </header>
+
+    <!-- Reglage Card -->
+    <div class="card">
+        <h2>⚙️ Réglages</h2>
+        
+        <div class="form-group">
+            <label for="breadType">Type de Pain :</label>
+            <select id="breadType" onchange="calculate()">
+                <option value="neutre">Pain neutre</option>
+                <option value="fibres">Pain fibres</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="gumType">Liant (Gommes) :</label>
+            <select id="gumType" onchange="calculate()">
+                <option value="mix">Mix 50/50 (Guar + Xanthane)</option>
+                <option value="guar">100% Gomme de Guar</option>
+                <option value="xanthane">100% Gomme Xanthane</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="loafCount">Nombre de Pains :</label>
+            <input type="number" id="loafCount" value="4" min="1" inputmode="numeric" oninput="calculate()">
+        </div>
+
+        <div class="btn-grid">
+            <div class="btn-preset" onclick="setLoaves(1)">1</div>
+            <div class="btn-preset" onclick="setLoaves(4)">4</div>
+            <div class="btn-preset" onclick="setLoaves(8)">8</div>
+            <div class="btn-preset" onclick="setLoaves(12)">12</div>
+        </div>
+
+        <div class="totals-summary">
+            <div>Cru : <strong id="totalDoughWeight" style="color:var(--accent-color)">1900</strong> g</div>
+            <div>Cuit : ~<strong id="totalBakedWeight">1615</strong> g</div>
+        </div>
+    </div>
+
+    <!-- Pesee de la fournee -->
+    <div class="card">
+        <h2>🥣 À Peser (Pétrissage)</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Ingrédient</th>
+                    <th style="text-align:right">Quantité</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="highlight">
+                    <td>📦 <strong>Premix Sec</strong></td>
+                    <td class="val" id="premixWeight">0 g</td>
+                </tr>
+                <tr>
+                    <td>💧 Eau tiède (~35°C)</td>
+                    <td class="val" id="waterWeight">0 g</td>
+                </tr>
+                <tr>
+                    <td>🌿 Psyllium blond</td>
+                    <td class="val" id="psylliumWeight">0 g</td>
+                </tr>
+                <tr>
+                    <td>🍞 Levure sèche</td>
+                    <td class="val" id="yeastWeight">0 g</td>
+                </tr>
+                <tr>
+                    <td>🫒 Huile neutre/olive</td>
+                    <td class="val" id="oilWeight">0 g</td>
+                </tr>
+                <tr>
+                    <td>🍯 Miel / Sucre</td>
+                    <td class="val" id="honeyWeight">0 g</td>
+                </tr>
+                <tr>
+                    <td>🍏 Vinaigre cidre</td>
+                    <td class="val" id="vinegarWeight">0 g</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Detail Seau -->
+    <div class="card">
+        <h2>🪣 Seau de Premix (<span id="bucketWeightTitle">2,55 kg</span>)</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Composition</th>
+                    <th style="text-align:center">%</th>
+                    <th style="text-align:right">Seau</th>
+                    <th style="text-align:right">Fournée</th>
+                </tr>
+            </thead>
+            <tbody id="premixDetailTable">
+                <!-- JS Populated -->
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            💡 <strong>Procédé :</strong> Diluer le Psyllium dans l'eau tiède (5 min). Ajouter la levure/miel. Verser le Premix et mélanger 3-5 min. Mouler à 475 g.
+        </div>
+    </div>
+</div>
+
+<script>
+    const baseRecipes = {
+        neutre: {
+            premix: 220, psyllium: 10, water: 231, yeast: 4, oil: 7, honey: 3, vinegar: 0,
+            bucketTotal: 2547.5,
+            flours: [
+                { name: "Farine de Riz", pct: 39.25, bucket: 1000 },
+                { name: "Fécule (Tapioca / Potato)", pct: 34.35, bucket: 875 },
+                { name: "Farine de Jowar", pct: 24.53, bucket: 625 },
+                { name: "Sel fin", pct: 1.37, bucket: 35 }
+            ]
+        },
+        fibres: {
+            premix: 200, psyllium: 11, water: 247, yeast: 4, oil: 7, honey: 3, vinegar: 3,
+            bucketTotal: 3703.7,
+            flours: [
+                { name: "Farine de Riz complet", pct: 27, bucket: 1000 },
+                { name: "Fécule (Tapioca / Potato)", pct: 18, bucket: 666.7 },
+                { name: "Farine de Bajra", pct: 22.5, bucket: 833.3 },
+                { name: "Farine de Ragi / Besan", pct: 22.5, bucket: 833.3 },
+                { name: "Graines (Lin, Sésame...)", pct: 9, bucket: 333.3 },
+                { name: "Sel fin", pct: 1.4, bucket: 51.9 }
+            ]
+        }
+    };
+
+    function savePreferences() {
+        localStorage.setItem('psg_breadType', document.getElementById('breadType').value);
+        localStorage.setItem('psg_gumType', document.getElementById('gumType').value);
+        localStorage.setItem('psg_loafCount', document.getElementById('loafCount').value);
+    }
+
+    function loadPreferences() {
+        if (localStorage.getItem('psg_breadType')) {
+            document.getElementById('breadType').value = localStorage.getItem('psg_breadType');
+        }
+        if (localStorage.getItem('psg_gumType')) {
+            document.getElementById('gumType').value = localStorage.getItem('psg_gumType');
+        }
+        if (localStorage.getItem('psg_loafCount')) {
+            document.getElementById('loafCount').value = localStorage.getItem('psg_loafCount');
+        }
+    }
+
+    function setLoaves(count) {
+        document.getElementById('loafCount').value = count;
+        calculate();
+    }
+
+    function calculate() {
+        const type = document.getElementById('breadType').value;
+        const gumOption = document.getElementById('gumType').value;
+        const count = parseFloat(document.getElementById('loafCount').value) || 0;
+        const rec = baseRecipes[type];
+
+        const totalDough = count * 475;
+        const totalBaked = Math.round(totalDough * 0.85);
+
+        document.getElementById('totalDoughWeight').innerText = totalDough;
+        document.getElementById('totalBakedWeight').innerText = totalBaked;
+        document.getElementById('bucketWeightTitle').innerText = rec.bucketTotal === 2547.5 ? "2,55 kg" : "3,70 kg";
+
+        const premixTotal = rec.premix * count;
+        document.getElementById('premixWeight').innerText = (premixTotal).toFixed(0) + " g";
+        document.getElementById('waterWeight').innerText = (rec.water * count).toFixed(0) + " g";
+        document.getElementById('psylliumWeight').innerText = (rec.psyllium * count).toFixed(1) + " g";
+        document.getElementById('yeastWeight').innerText = (rec.yeast * count).toFixed(1) + " g";
+        document.getElementById('oilWeight').innerText = (rec.oil * count).toFixed(1) + " g";
+        document.getElementById('honeyWeight').innerText = (rec.honey * count).toFixed(1) + " g";
+        document.getElementById('vinegarWeight').innerText = (rec.vinegar * count).toFixed(1) + " g";
+
+        let premixComp = [...rec.flours];
+
+        if (type === 'neutre') {
+            if (gumOption === 'mix') {
+                premixComp.push({ name: "Guar (50%)", pct: 0.25, bucket: 6.25 });
+                premixComp.push({ name: "Xanthane (50%)", pct: 0.25, bucket: 6.25 });
+            } else if (gumOption === 'guar') {
+                premixComp.push({ name: "Guar (100%)", pct: 0.5, bucket: 12.5 });
+            } else if (gumOption === 'xanthane') {
+                premixComp.push({ name: "Xanthane (100%)", pct: 0.5, bucket: 12.5 });
+            }
+        } else {
+            if (gumOption === 'mix') {
+                premixComp.push({ name: "Guar (50%)", pct: 0.25, bucket: 9.25 });
+                premixComp.push({ name: "Xanthane (50%)", pct: 0.25, bucket: 9.25 });
+            } else if (gumOption === 'guar') {
+                premixComp.push({ name: "Guar (100%)", pct: 0.5, bucket: 18.5 });
+            } else if (gumOption === 'xanthane') {
+                premixComp.push({ name: "Xanthane (100%)", pct: 0.5, bucket: 18.5 });
+            }
+        }
+
+        const tbody = document.getElementById('premixDetailTable');
+        tbody.innerHTML = '';
+
+        premixComp.forEach(item => {
+            const row = document.createElement('tr');
+            const usedInBatch = (premixTotal * (item.bucket / rec.bucketTotal)).toFixed(1);
+
+            row.innerHTML = `
+                <td>${item.name}</td>
+                <td style="text-align:center">${item.pct.toFixed(1)}%</td>
+                <td style="text-align:right; font-weight:600">${item.bucket.toFixed(0)} g</td>
+                <td style="text-align:right; color:var(--accent-color); font-weight:700">${usedInBatch} g</td>
+            `;
+            tbody.appendChild(row);
+        });
+
+        savePreferences();
+    }
+
+    // Initialisation
+    loadPreferences();
+    calculate();
+</script>
+
+</body>
+</html>
