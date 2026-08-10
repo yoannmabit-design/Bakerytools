@@ -14,8 +14,11 @@
     th { background: #7a4a1f; color: #fff; }
     input[type="text"], input[type="number"], select { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
     .btn { background: #7a4a1f; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; margin-right: 5px; }
+    .btn-tri { background: #efe0c8; color: #7a4a1f; border: 1px solid #7a4a1f; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: bold; }
+    .btn-tri:hover { background: #7a4a1f; color: #fff; }
     .btn-sup { background: #c0392b; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
     .status-bar { background: #efe0c8; padding: 8px 12px; border-radius: 6px; margin-bottom: 15px; font-size: 0.85em; font-weight: bold; color: #7a4a1f; }
+    .toolbar-tri { margin-bottom: 12px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 </style>
 
 <!-- Firebase SDK Compat Version -->
@@ -26,6 +29,13 @@
 
 <h1>🏷️ Gestion de la Base Ingrédients & Prix (₱)</h1>
 <div class="status-bar" id="statusBar">🔄 Connexion à Firebase...</div>
+
+<div class="toolbar-tri">
+    <span style="font-size:0.85em; font-weight:bold; color:#6b5b45;">Trier par :</span>
+    <button class="btn-tri" onclick="trierAlphabetique()">🔤 Nom (A-Z)</button>
+    <button class="btn-tri" onclick="trierPrix('asc')">📈 Prix Croissant</button>
+    <button class="btn-tri" onclick="trierPrix('desc')">📉 Prix Décroissant</button>
+</div>
 
 <div class="carte">
     <table>
@@ -76,6 +86,7 @@
     ];
 
     let listeIngredients = [];
+    let sensAlphabetique = true;
 
     function chargerDonnees() {
         db.collection("ingredients").doc("master").onSnapshot((doc) => {
@@ -110,6 +121,17 @@
             `;
             corps.appendChild(tr);
         });
+    }
+
+    function trierAlphabetique() {
+        listeIngredients.sort((a, b) => sensAlphabetique ? a.nom.localeCompare(b.nom) : b.nom.localeCompare(a.nom));
+        sensAlphabetique = !sensAlphabetique;
+        afficherTableau();
+    }
+
+    function trierPrix(ordre) {
+        listeIngredients.sort((a, b) => ordre === 'asc' ? a.prix - b.prix : b.prix - a.prix);
+        afficherTableau();
     }
 
     function modifier(index, champ, valeur) { listeIngredients[index][champ] = valeur; }
