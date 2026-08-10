@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ordre de Fabrication & Coûts</title>
+<title>Analyse des Commandes de Demain</title>
 <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #fdf6ec; color: #3b2c1a; padding: 20px; margin: 0; }
     h1 { color: #7a4a1f; font-size: 1.4rem; margin-bottom: 5px; }
@@ -24,15 +24,15 @@
 </head>
 <body>
 
-<h1>📋 Ordre de Fabrication du Jour</h1>
-<div class="status-bar" id="statusBar">🔄 Chargement des recettes Firebase...</div>
+<h1>📦 Commandes & Production du Lendemain</h1>
+<div class="status-bar" id="statusBar">🔄 Extraction des recettes Firebase...</div>
 
 <div class="carte">
     <table>
         <thead>
             <tr>
-                <th style="width: 40%;">Produit (issu des Fiches Recettes)</th>
-                <th style="width: 20%;">Quantité (pièces)</th>
+                <th style="width: 40%;">Produit Commandé</th>
+                <th style="width: 20%;">Quantité Commandée</th>
                 <th style="width: 20%;">Coût Unitaire (₱)</th>
                 <th style="width: 20%;">Coût Total Matière (₱)</th>
                 <th>Action</th>
@@ -41,10 +41,10 @@
         <tbody id="corpsTableau"></tbody>
     </table>
 
-    <button class="btn" onclick="ajouterLigne()">+ Ajouter un produit à la fournée</button>
-    <button class="btn" style="background:#27ae60;" onclick="sauvegarderOF()">☁️ Enregistrer l'OF</button>
+    <button class="btn" onclick="ajouterLigne()">+ Ajouter un produit à la commande</button>
+    <button class="btn" style="background:#27ae60;" onclick="sauvegarderCommandes()">☁️ Enregistrer les Commandes</button>
 
-    <div class="total-box" id="totalGeneral">Coût total de la fournée : ₱ 0,00</div>
+    <div class="total-box" id="totalGeneral">Coût total matière de la production : ₱ 0,00</div>
 </div>
 
 <script>
@@ -63,13 +63,12 @@
 
     let masterIngredients = [];
     let fichesRecettes = [];
-    let ordreFabrication = [];
+    let commandesDemain = [];
 
     function formatPeso(nombre) {
         return "₱ " + nombre.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
-    // Calcul du coût unitaire par pièce d'une recette
     function calculerCoutUnitaire(recette) {
         if (!recette || !recette.ingredients || recette.nbPieces <= 0) return 0;
 
@@ -95,17 +94,17 @@
         db.collection("recettes").doc("fiches").onSnapshot(doc => {
             if (doc.exists) {
                 fichesRecettes = doc.data().items || [];
-                document.getElementById('statusBar').textContent = "✅ " + fichesRecettes.length + " recette(s) chargée(s) depuis Prix de Revient";
+                document.getElementById('statusBar').textContent = "✅ " + fichesRecettes.length + " recette(s) rattachée(s) à la page Prix de Revient";
             }
             afficherTableau();
         });
 
-        // 3. Charger Ordre de Fabrication du jour
-        db.collection("production").doc("ordre_du_jour").onSnapshot(doc => {
+        // 3. Charger les Commandes du Lendemain
+        db.collection("production").doc("commandes_demain").onSnapshot(doc => {
             if (doc.exists && doc.data().items) {
-                ordreFabrication = doc.data().items;
-            } else if (ordreFabrication.length === 0) {
-                ordreFabrication = [{ nom: "", qte: 0 }];
+                commandesDemain = doc.data().items;
+            } else if (commandesDemain.length === 0) {
+                commandesDemain = [{ nom: "", qte: 0 }];
             }
             afficherTableau();
         });
@@ -116,14 +115,12 @@
         corps.innerHTML = '';
         let grandTotal = 0;
 
-        ordreFabrication.forEach((item, index) => {
-            // Trouver la recette sélectionnée dans la liste extraite
+        commandesDemain.forEach((item, index) => {
             const recetteTrouvee = fichesRecettes.find(r => r.nom.toLowerCase().trim() === item.nom.toLowerCase().trim());
             const coutUnitaire = recetteTrouvee ? calculerCoutUnitaire(recetteTrouvee) : 0;
             const coutTotalLigne = coutUnitaire * (item.qte || 0);
             grandTotal += coutTotalLigne;
 
-            // Génération dynamique des options du menu déroulant
             let optionsHTML = `<option value="">-- Sélectionner un produit --</option>`;
             fichesRecettes.forEach(r => {
                 const estSelectionne = r.nom.toLowerCase().trim() === item.nom.toLowerCase().trim() ? 'selected' : '';
@@ -147,27 +144,27 @@
             corps.appendChild(tr);
         });
 
-        document.getElementById('totalGeneral').textContent = "Coût total matière de la fournée : " + formatPeso(grandTotal);
+        document.getElementById('totalGeneral').textContent = "Coût total matière de la production : " + formatPeso(grandTotal);
     }
 
     function modifier(index, champ, valeur) {
-        ordreFabrication[index][champ] = valeur;
+        commandesDemain[index][champ] = valeur;
         afficherTableau();
     }
 
     function ajouterLigne() {
-        ordreFabrication.push({ nom: "", qte: 0 });
+        commandesDemain.push({ nom: "", qte: 0 });
         afficherTableau();
     }
 
     function supprimer(index) {
-        ordreFabrication.splice(index, 1);
+        commandesDemain.splice(index, 1);
         afficherTableau();
     }
 
-    function sauvegarderOF() {
-        db.collection("production").doc("ordre_du_jour").set({ items: ordreFabrication })
-            .then(() => alert("Ordre de fabrication enregistré sur Firebase !"))
+    function sauvegarderCommandes() {
+        db.collection("production").doc("commandes_demain").set({ items: commandesDemain })
+            .then(() => alert("Commandes du lendemain enregistrées !"))
             .catch(err => alert("Erreur d'enregistrement : " + err.message));
     }
 
