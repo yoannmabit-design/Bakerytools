@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Base Prix & Ingrédients</title>
+<style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #fdf6ec; color: #3b2c1a; padding: 20px; margin: 0; }
+    h1 { color: #7a4a1f; font-size: 1.4rem; }
+    p { font-size: 0.9rem; color: #6b5b45; margin-bottom: 15px; }
+    .carte { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 15px; max-width: 900px; }
+    table { border-collapse: collapse; width: 100%; font-size: 0.9em; }
+    th, td { border: 1px solid #e0d3bd; padding: 8px; text-align: left; }
+    th { background: #7a4a1f; color: #fff; }
+    input[type="text"], input[type="number"], select { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+    .btn { background: #7a4a1f; color: #fff; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 15px; }
+    .btn-sup { background: #c0392b; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<h1>🏷️ Gestion de la Base Ingrédients & Prix (₱)</h1>
+<p>Les prix modifiés ici s'appliqueront automatiquement au calcul des coûts par pièce.</p>
+
+<div class="carte">
+    <table>
+        <thead>
+            <tr>
+                <th>Ingrédient</th>
+                <th>Unité</th>
+                <th>Prix unitaire (₱)</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="corpsTableau"></tbody>
+    </table>
+
+    <button class="btn" onclick="ajouterLigne()">+ Ajouter un ingrédient</button>
+    <button class="btn" style="background:#27ae60;" onclick="sauvegarder()">💾 Enregistrer les prix</button>
+</div>
+
+<script>
+    const ingredientsParDefaut = [
+        { nom: "Farine de blé", type: "kg", prix: 45 },
+        { nom: "Farine de seigle", type: "kg", prix: 55 },
+        { nom: "Farine complète", type: "kg", prix: 50 },
+        { nom: "Farine", type: "kg", prix: 45 },
+        { nom: "Beurre", type: "kg", prix: 380 },
+        { nom: "Sucre", type: "kg", prix: 60 },
+        { nom: "Œufs", type: "unite", prix: 8 },
+        { nom: "Levure", type: "kg", prix: 250 },
+        { nom: "Sel", type: "kg", prix: 25 },
+        { nom: "Huile d'olive", type: "kg", prix: 400 },
+        { nom: "Noix", type: "kg", prix: 600 },
+        { nom: "Olives", type: "kg", prix: 350 },
+        { nom: "Mix de graines", type: "kg", prix: 200 }
+    ];
+
+    let listeIngredients = JSON.parse(localStorage.getItem('bakeryMasterIngredients')) || ingredientsParDefaut;
+
+    function afficherTableau() {
+        const corps = document.getElementById('corpsTableau');
+        corps.innerHTML = '';
+        listeIngredients.forEach((item, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="text" value="${item.nom}" onchange="modifier(${index}, 'nom', this.value)"></td>
+                <td>
+                    <select onchange="modifier(${index}, 'type', this.value)">
+                        <option value="kg" ${item.type === 'kg' ? 'selected' : ''}>₱ / kg</option>
+                        <option value="unite" ${item.type === 'unite' ? 'selected' : ''}>₱ / unité</option>
+                    </select>
+                </td>
+                <td><input type="number" step="0.01" value="${item.prix}" onchange="modifier(${index}, 'prix', parseFloat(this.value) || 0)"></td>
+                <td><button class="btn-sup" onclick="supprimer(${index})">X</button></td>
+            `;
+            corps.appendChild(tr);
+        });
+    }
+
+    function modifier(index, champ, valeur) {
+        listeIngredients[index][champ] = valeur;
+    }
+
+    function ajouterLigne() {
+        listeIngredients.push({ nom: "Nouvel Ingrédient", type: "kg", prix: 0 });
+        afficherTableau();
+    }
+
+    function supprimer(index) {
+        listeIngredients.splice(index, 1);
+        afficherTableau();
+    }
+
+    function sauvegarder() {
+        localStorage.setItem('bakeryMasterIngredients', JSON.stringify(listeIngredients));
+        alert("Base de prix mise à jour avec succès !");
+    }
+
+    afficherTableau();
+</script>
+
+</body>
+</html>

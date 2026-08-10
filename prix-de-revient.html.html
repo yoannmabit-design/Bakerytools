@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calcul Prix de Revient - Tous Produits (₱)</title>
+<style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #fdf6ec; color: #3b2c1a; padding: 20px; margin: 0; }
+    h1 { color: #7a4a1f; font-size: 1.4rem; margin-bottom: 5px; }
+    p { font-size: 0.85rem; color: #6b5b45; margin-bottom: 15px; }
+    .carte { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 15px; max-width: 900px; margin-bottom: 20px; }
+    
+    .produit-bloc { border: 1px solid #e0d3bd; border-radius: 8px; padding: 12px; margin-bottom: 15px; background: #faf5ed; }
+    .produit-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .produit-titre { font-weight: bold; font-size: 1.1em; color: #7a4a1f; flex-grow: 1; border: 1px solid #ccc; padding: 5px; border-radius: 4px; background: #fff; }
+    .nb-pieces-input { width: 90px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; text-align: center; }
+    
+    table { border-collapse: collapse; width: 100%; font-size: 0.85em; background: #fff; margin-bottom: 8px; }
+    th, td { border: 1px solid #e0d3bd; padding: 6px; text-align: center; }
+    th { background: #7a4a1f; color: #fff; }
+    select, input[type="number"] { padding: 4px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+    
+    .resume-produit { display: flex; justify-content: space-between; align-items: center; font-weight: bold; margin-top: 8px; font-size: 0.9em; }
+    .badge-cout { background: #e8f8f5; color: #27ae60; padding: 4px 8px; border-radius: 4px; font-size: 1.05em; }
+    
+    .btn { background: #7a4a1f; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: bold; }
+    .btn-add-ingred { background: #efe0c8; color: #7a4a1f; border: 1px solid #7a4a1f; padding: 4px 8px; font-size: 0.8em; margin-top: 5px; }
+    .btn-sup { background: #c0392b; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<h1>💰 Calcul du Prix de Revient Matière</h1>
+<p>Crée la fiche technique de n'importe quel produit pour calculer son coût matière unitaire (₱).</p>
+
+<button class="btn" onclick="ajouterProduit()">+ Ajouter un nouveau produit / viennoiserie</button>
+<button class="btn" style="background:#27ae60;" onclick="sauvegarderTout()">💾 Enregistrer les fiches recettes</button>
+
+<div id="conteneurProduits" style="margin-top:15px;"></div>
+
+<script>
+    function formatPeso(nombre) {
+        return "₱ " + nombre.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    // Récupère la liste des ingrédients enregistrés dans la page Base Ingrédients
+    function chargerMasterIngredients() {
+        return JSON.parse(localStorage.getItem('bakeryMasterIngredients')) || [
+            { nom: "Farine de blé", type: "kg", prix: 45 },
+            { nom: "Beurre", type: "kg", prix: 380 },
+            { nom: "Sucre", type: "kg", prix: 60 },
+            { nom: "Œufs", type: "unite", prix: 8 },
+            { nom: "Sel", type: "kg", prix: 25 }
+        ];
+    }
+
+    // Structure par défaut si aucune recette n'a été enregistrée
+    let fichesProduits = JSON.parse(localStorage.getItem('bakeryFichesProduits')) || [
+        {
+            nom: "Croissant",
+            nbPieces: 10,
+            ingredients: [
+                { nom: "Farine de blé", qte: 500 },
+                { nom: "Beurre", qte: 250 },
+                { nom: "Sucre", qte: 60 },
+                { nom: "Sel", qte: 10 }
+            ]
+        }
+    ];
+
+    function afficherFiches() {
+        const conteneur = document.getElementById('conteneurProduits');
+        conteneur.innerHTML = '';
+        const master = chargerMasterIngredients();
+
+        fichesProduits.forEach((prod, pIdx) => {
+            const bloc = document.createElement('div');
+            bloc.className = 'carte produit-bloc';
+
+            let optionsMaster = master.map(i => `<option value="${i.nom}">${i.nom} (${i.prix} ₱/${i.type})</option>`).join('');
+
+            let lignesHTML = '';
+            let coutTotalRecette = 0;
+
+            prod.ingredients.forEach((ing, iIdx) => {
+                const infoIngred = master.find(m => m.nom.toLowerCase() === ing.nom.toLowerCase());
+                const prixUnitaire = infoIngred ? infoIngred.prix : 0;
+                const typeUnite = infoIngred ? infoIngred.type : 'kg';
+
+                // Si type kg: qte en grammes divisee par 1000. Si unité: quantité directe.
+                const coutLigne = typeUnite === 'kg' ? (ing.qte / 1000) * prixUnitaire : ing.qte * prixUnitaire;
+                coutTotalRecette += coutLigne;
+
+                lignesHTML += `
+                    <tr>
+                        <td style="text-align:left;">
+                            <select onchange="modifierIngredNom(${pIdx}, ${iIdx}, this.value)">
+                                ${master.map(m => `<option value="${m.nom}" ${m.nom === ing.nom ? 'selected' : ''}>${m.nom}</option>`).join('')}
+                            </select>
+                        </td>
+                        <td>
+                            <input type="number" step="0.1" value="${ing.qte}" onchange="modifierIngredQte(${pIdx}, ${iIdx}, parseFloat(this.value)||0)" style="width:70px;"> 
+                            ${typeUnite === 'kg' ? 'g' : 'unité(s)'}
+                        </td>
+                        <td>${formatPeso(coutLigne)}</td>
+                        <td><button class="btn-sup" onclick="supprimerIngred(${pIdx}, ${iIdx})">X</button></td>
+                    </tr>
+                `;
+            });
+
+            const coutUnitaire = prod.nbPieces > 0 ? (coutTotalRecette / prod.nbPieces) : 0;
+
+            bloc.innerHTML = `
+                <div class="produit-header">
+                    <input type="text" class="produit-titre" value="${prod.nom}" onchange="modifierNomProduit(${pIdx}, this.value)">
+                    <label style="font-size:0.85em;">Pièces produites: 
+                        <input type="number" min="1" class="nb-pieces-input" value="${prod.nbPieces}" onchange="modifierNbPieces(${pIdx}, parseInt(this.value)||1)">
+                    </label>
+                    <button class="btn-sup" onclick="supprimerProduit(${pIdx})">🗑️ Supprimer</button>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Ingrédient</th>
+                            <th>Quantité pour la recette</th>
+                            <th>Coût (₱)</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>${lignesHTML}</tbody>
+                </table>
+
+                <button class="btn btn-add-ingred" onclick="ajouterIngred(${pIdx})">+ Ajouter un ingrédient</button>
+
+                <div class="resume-produit">
+                    <span>Coût total recette : ${formatPeso(coutTotalRecette)}</span>
+                    <span>Coût matière par pièce : <span class="badge-cout">${formatPeso(coutUnitaire)}</span></span>
+                </div>
+            `;
+
+            conteneur.appendChild(bloc);
+        });
+    }
+
+    function modifierNomProduit(pIdx, val) { fichesProduits[pIdx].nom = val; }
+    function modifierNbPieces(pIdx, val) { fichesProduits[pIdx].nbPieces = val; afficherFiches(); }
+    function modifierIngredNom(pIdx, iIdx, val) { fichesProduits[pIdx].ingredients[iIdx].nom = val; afficherFiches(); }
+    function modifierIngredQte(pIdx, iIdx, val) { fichesProduits[pIdx].ingredients[iIdx].qte = val; afficherFiches(); }
+
+    function ajouterProduit() {
+        const master = chargerMasterIngredients();
+        const premierIngred = master.length > 0 ? master[0].nom : "Farine de blé";
+        fichesProduits.push({ nom: "Nouveau produit", nbPieces: 1, ingredients: [{ nom: premierIngred, qte: 100 }] });
+        afficherFiches();
+    }
+
+    function supprimerProduit(pIdx) {
+        if (confirm("Supprimer ce produit ?")) {
+            fichesProduits.splice(pIdx, 1);
+            afficherFiches();
+        }
+    }
+
+    function ajouterIngred(pIdx) {
+        const master = chargerMasterIngredients();
+        const premierIngred = master.length > 0 ? master[0].nom : "Farine de blé";
+        fichesProduits[pIdx].ingredients.push({ nom: premierIngred, qte: 0 });
+        afficherFiches();
+    }
+
+    function supprimerIngred(pIdx, iIdx) {
+        fichesProduits[pIdx].ingredients.splice(iIdx, 1);
+        afficherFiches();
+    }
+
+    function sauvegarderTout() {
+        localStorage.setItem('bakeryFichesProduits', JSON.stringify(fichesProduits));
+        alert("Toutes vos fiches produits ont été sauvegardées !");
+    }
+
+    window.addEventListener('DOMContentLoaded', afficherFiches);
+</script>
+
+</body>
+</html>

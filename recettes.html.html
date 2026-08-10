@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recettes Boulangerie - Calculateur</title>
+<style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #fdf6ec; color: #3b2c1a; margin: 0; padding: 20px; }
+    h1 { color: #7a4a1f; margin-bottom: 5px; font-size: 1.4rem; }
+    h2 { color: #7a4a1f; margin-top: 0; font-size: 1.1rem; }
+    p.sous-titre { margin-top: 0; color: #6b5b45; font-size: 0.85rem; }
+    .carte { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 15px; max-width: 900px; margin-bottom: 20px; }
+    .grille-quantites { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 15px; }
+    .champ-qte label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.85em; }
+    .champ-qte input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em; box-sizing: border-box; text-align: center; }
+    .resume-totaux { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 15px; }
+    .bloc-total { background: #f0e6d2; border-radius: 8px; padding: 12px; text-align: center; }
+    .bloc-total .libelle { font-size: 0.85em; color: #6b5b45; }
+    .bloc-total .valeur { font-size: 1.4em; font-weight: bold; color: #7a4a1f; }
+    .onglets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 15px; max-width: 900px; }
+    .onglet-btn { background: #efe0c8; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 0.85em; color: #7a4a1f; font-weight: bold; }
+    .onglet-btn.actif { background: #7a4a1f; color: #fff; }
+    .contenu-onglet { display: none; }
+    .contenu-onglet.actif { display: block; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 10px; font-size: 0.9em; }
+    th, td { border: 1px solid #e0d3bd; padding: 8px; text-align: center; }
+    th { background: #7a4a1f; color: #fff; font-weight: normal; }
+    tr:nth-child(even) td { background: #fbf3e6; }
+    .qte-cell { font-weight: bold; background: #f0e6d2 !important; font-size: 1em; }
+    .info-hydratation, .info-nb { margin-top: 10px; font-size: 0.85em; color: #6b5b45; }
+    .carte-tardive { border: 2px dashed #b05a2f; background: #fff8ef; }
+    .carte-tardive h2 { color: #b05a2f; }
+    .bloc-total-tardif { background: #fbe3d0; }
+    .bloc-total-tardif .valeur { color: #b05a2f; }
+    .btn-reinit { background: none; border: 1px solid #b05a2f; color: #b05a2f; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8em; margin-top: 10px; }
+    .supplement-tardif { margin-top: 20px; padding-top: 15px; border-top: 2px dashed #b05a2f; }
+    .supplement-tardif h3 { color: #b05a2f; margin-top: 0; margin-bottom: 10px; font-size: 1rem; }
+    .supplement-tardif table th { background: #b05a2f; }
+    .supplement-tardif .qte-cell { background: #fbe3d0 !important; }
+</style>
+</head>
+<body>
+
+<h1>🥖 Recettes Boulangerie</h1>
+<p class="sous-titre">Indique le nombre de pains/pâtons voulus — tout se recalcule automatiquement.</p>
+
+<div class="carte">
+    <h2>📋 Quantités à produire</h2>
+    <div class="grille-quantites">
+        <div class="champ-qte">
+            <label for="qte-levain">Pain au levain (600 g)</label>
+            <input type="number" step="1" min="0" id="qte-levain" value="4">
+        </div>
+        <div class="champ-qte">
+            <label for="qte-baguette">Baguette (350 g)</label>
+            <input type="number" step="1" min="0" id="qte-baguette" value="5">
+        </div>
+        <div class="champ-qte">
+            <label for="qte-noix">Pain aux noix (600 g)</label>
+            <input type="number" step="1" min="0" id="qte-noix" value="4">
+        </div>
+        <div class="champ-qte">
+            <label for="qte-multigrain">Multigrain (600 g)</label>
+            <input type="number" step="1" min="0" id="qte-multigrain" value="4">
+        </div>
+        <div class="champ-qte">
+            <label for="qte-focaccia">Focaccia (600 g)</label>
+            <input type="number" step="1" min="0" id="qte-focaccia" value="4">
+        </div>
+    </div>
+
+    <div class="resume-totaux">
+        <div class="bloc-total">
+            <div class="libelle">Levain à préparer</div>
+            <div class="valeur" id="total-levain">0 g</div>
+        </div>
+        <div class="bloc-total">
+            <div class="libelle">Pâte fermentée à préparer</div>
+            <div class="valeur" id="total-pate-fermentee">0 g</div>
+        </div>
+    </div>
+</div>
+
+<div class="carte carte-tardive">
+    <h2>➕ Commande tardive</h2>
+    <div class="grille-quantites">
+        <div class="champ-qte">
+            <label for="qte-tardif-baguette">Baguette (350 g)</label>
+            <input type="number" step="1" min="0" id="qte-tardif-baguette" value="0">
+        </div>
+        <div class="champ-qte">
+            <label for="qte-tardif-noix">Pain aux noix (600 g)</label>
+            <input type="number" step="1" min="0" id="qte-tardif-noix" value="0">
+        </div>
+        <div class="champ-qte">
+            <label for="qte-tardif-multigrain">Multigrain (600 g)</label>
+            <input type="number" step="1" min="0" id="qte-tardif-multigrain" value="0">
+        </div>
+        <div class="champ-qte">
+            <label for="qte-tardif-focaccia">Focaccia (600 g)</label>
+            <input type="number" step="1" min="0" id="qte-tardif-focaccia" value="0">
+        </div>
+    </div>
+
+    <div class="resume-totaux">
+        <div class="bloc-total bloc-total-tardif">
+            <div class="libelle">Levain supplémentaire</div>
+            <div class="valeur" id="total-tardif-levain">0 g</div>
+        </div>
+        <div class="bloc-total bloc-total-tardif">
+            <div class="libelle">Pâte fermentée supplémentaire</div>
+            <div class="valeur" id="total-tardif-pate-fermentee">0 g</div>
+        </div>
+    </div>
+    <button class="btn-reinit" id="btn-reinit-tardif">Réinitialiser commande tardive</button>
+</div>
+
+<div class="onglets">
+    <button class="onglet-btn actif" data-cible="onglet-levain">Pain au Levain</button>
+    <button class="onglet-btn" data-cible="onglet-baguette">Baguette</button>
+    <button class="onglet-btn" data-cible="onglet-noix">Pain aux Noix</button>
+    <button class="onglet-btn" data-cible="onglet-multigrain">Multigrain</button>
+    <button class="onglet-btn" data-cible="onglet-focaccia">Focaccia</button>
+    <button class="onglet-btn" data-cible="onglet-pate-fermentee">Pâte Fermentée</button>
+</div>
+
+<!-- ============ PAIN AU LEVAIN ============ -->
+<div class="carte contenu-onglet actif" id="onglet-levain">
+    <h2>🍞 Pain au Levain</h2>
+    <table>
+        <thead><tr><th>Ingrédient</th><th>Recette de base</th><th>Quantité à préparer</th></tr></thead>
+        <tbody id="corps-levain"></tbody>
+    </table>
+    <div class="info-hydratation" id="hydratation-levain"></div>
+    <div class="info-nb" id="info-nb-levain"></div>
+</div>
+
+<!-- ============ BAGUETTE ============ -->
+<div class="carte contenu-onglet" id="onglet-baguette">
+    <h2>🥖 Baguette</h2>
+    <table>
+        <thead><tr><th>Ingrédient</th><th>Recette de base</th><th>Quantité à préparer</th></tr></thead>
+        <tbody id="corps-baguette"></tbody>
+    </table>
+    <div class="info-hydratation" id="hydratation-baguette"></div>
+    <div class="info-nb" id="info-nb-baguette"></div>
+
+    <div class="supplement-tardif" id="supplement-baguette">
+        <h3>➕ Supplément commande tardive</h3>
+        <table>
+            <thead><tr><th>Ingrédient</th><th>Recette de base</th><th>Quantité supplémentaire</th></tr></thead>
+            <tbody id="corps-baguette-tardif"></tbody>
+        </table>
+        <div class="info-nb" id="info-nb-baguette-tardif"></div>
+    </div>
+</div>
+
+<!-- ============ PAIN AUX NOIX ============ -->
+<div class="carte contenu-onglet" id="onglet-noix">
+    <h2>🌰 Pain aux Noix</h2>
+    <table>
+        <thead><tr><th>Ingrédient</th><th>Recette de base</th><th>Quantité à préparer</th></tr></thead>
+        <tbody id="corps-noix"></tbody>
+    </table>
+    <div class="info-hydratation" id="hydratation-noix"></div>
+    <div class="info-nb" id="info-nb-noix"></div>
+
+    <div class="supplement-tardif" id="supplement-noix">
+        <h3>➕ Supplément commande tardive</h3>
+        <table>
+            <thead><tr><th>Ingrédient</th><th>Recette de base</th><th>Quantité supplémentaire</th></tr></thead>
+            <tbody id="corps-noix-tardif"></tbody>
+        </table>
+        <div class="info-nb" id="info-nb-noix-tardif"></div>
+    </div>
+</div>
+
+<!-- ============ MULTIGRAIN ============ -->
+<div class="carte contenu-onglet" id="onglet-multigrain">
+    <h2>🌾 Multigrain</h2>
+    <table>
+        <thead><tr><th>Ingrédient</th><th>Recette de base</th><th>Quantité à préparer</th></tr></thead>
+        <tbody id="corps-multigrain"></tbody>
+    </table>
+    <div class="info-hydratation" id="hydratation-multigrain"></div>
+    <div class="info-nb" id="info-nb-multigrain"></div>
+
+    <div class="supplement-tardif" id="supplement-multigrain">
+        <h3>➕ Supplément commande tardive</h3>
+        <table>
+            <thead><tr><th>Ingrédient</th><th>Recette de base</th><th>Quantité supplémentaire</th></tr></thead>
+            <tbody id="corps-multigrain-tardif"></tbody>
+        </table>
+        <div class="info-nb" id="info-nb-multigrain-tardif"></div>
+    </div>
+</div>
+
+<!-- ============ FOCACCIA ============ -->
+<div class="carte contenu-onglet" id="onglet-focaccia">
+    <h2>🫒 Focaccia</h2>
+    <table>
+        <thead><tr><th>Ingrédient</th><th>Recette de base</th><th>Quantité à préparer</th></tr></thead>
+        <tbody id="corps-focaccia"></tbody>
+    </table>
+    <div class="info-hydratation" id="hydratation-focaccia"></div>
+    <div class="info-nb" id="info-nb-focaccia"></div>
+
+    <div class="supplement-tardif" id="supplement-focaccia">
+        <h3>➕ Supplément commande tardive</h3>
+        <table>
+            <thead><tr><th>Ingrédient</th><th>Recette de base</th><th>Quantité supplémentaire</th></tr></thead>
+            <tbody id="corps-focaccia-tardif"></tbody>
+        </table>
+        <div class="info-nb" id="info-nb-focaccia-tardif"></div>
+    </div>
+</div>
+
+<!-- ============ PÂTE FERMENTÉE ============ -->
+<div class="carte contenu-onglet" id="onglet-pate-fermentee">
+    <h2>🫙 Pâte Fermentée</h2>
+    <table>
+        <thead><tr><th>Ingrédient</th><th>Recette de base</th><th>Quantité à préparer</th></tr></thead>
+        <tbody id="corps-pateFermentee"></tbody>
+    </table>
+    <div class="info-hydratation" id="hydratation-pateFermentee"></div>
+    <div class="info-nb" id="info-nb-pateFermentee"></div>
+</div>
+
+<script>
+    const recettes = {
+        levain: { poidsPiece: 600, farinesPourHydratation: ["Farine de blé", "Farine de seigle", "Farine complète"], ingredients: [{ nom: "Farine de blé", qte: 1000 }, { nom: "Farine de seigle", qte: 100 }, { nom: "Farine complète", qte: 350 }, { nom: "Eau", qte: 950 }, { nom: "Levain", qte: 290 }, { nom: "Sel", qte: 29 }] },
+        baguette: { poidsPiece: 350, farinesPourHydratation: ["Farine"], ingredients: [{ nom: "Farine", qte: 1000 }, { nom: "Eau", qte: 680 }, { nom: "Pâte fermentée", qte: 280 }, { nom: "Levure", qte: 11 }, { nom: "Sel", qte: 18 }] },
+        noix: { poidsPiece: 600, farinesPourHydratation: ["Farine de blé", "Farine de seigle"], ingredients: [{ nom: "Farine de blé", qte: 1000 }, { nom: "Farine de seigle", qte: 100 }, { nom: "Eau", qte: 755 }, { nom: "Levure", qte: 12 }, { nom: "Pâte fermentée", qte: 275 }, { nom: "Noix", qte: 210 }, { nom: "Sel", qte: 20 }] },
+        multigrain: { poidsPiece: 600, farinesPourHydratation: ["Farine de blé", "Farine complète", "Farine de seigle"], ingredients: [{ nom: "Farine de blé", qte: 1000 }, { nom: "Farine complète", qte: 20 }, { nom: "Farine de seigle", qte: 80 }, { nom: "Mix de graines", qte: 100 }, { nom: "Eau", qte: 795 }, { nom: "Levure", qte: 12 }, { nom: "Pâte fermentée", qte: 275 }, { nom: "Sel", qte: 20 }] },
+        focaccia: { poidsPiece: 600, farinesPourHydratation: ["Farine de blé"], ingredients: [{ nom: "Farine de blé", qte: 1000 }, { nom: "O'tentic", qte: 40 }, { nom: "Eau", qte: 620 }, { nom: "Huile d'olive", qte: 2 }, { nom: "Pâte fermentée", qte: 250 }, { nom: "Olives", qte: 220 }, { nom: "Sel", qte: 18 }] },
+        pateFermentee: { farinesPourHydratation: ["Farine"], ingredients: [{ nom: "Farine", qte: 1000 }, { nom: "Eau", qte: 625 }, { nom: "Levain", qte: 200 }, { nom: "Sel", qte: 18 }] }
+    };
+
+    const pateFermenteeParPiece = { baguette: 49.3, noix: 80.7, multigrain: 70, focaccia: 89 };
+    const levainParPiece = 64;
+
+    function idSafe(nom) { return nom.replace(/[^a-zA-Z0-9]/g, ''); }
+
+    function construireTableau(cle, prefixe) {
+        prefixe = prefixe || cle;
+        const corps = document.getElementById('corps-' + prefixe);
+        corps.innerHTML = '';
+        recettes[cle].ingredients.forEach((item) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${item.nom}</td><td>${item.qte} g</td><td class="qte-cell" id="qte-${prefixe}-${idSafe(item.nom)}">0 g</td>`;
+            corps.appendChild(tr);
+        });
+    }
+
+    function recalculerRecette(cle, nbPieces, prefixe, libelleTotal) {
+        prefixe = prefixe || cle;
+        libelleTotal = libelleTotal || 'Total à préparer';
+        const recette = recettes[cle];
+        const totalBase = recette.ingredients.reduce((acc, item) => acc + item.qte, 0);
+        const totalDemande = nbPieces * recette.poidsPiece;
+        const facteur = totalBase > 0 ? totalDemande / totalBase : 0;
+        let eau = 0, farinesTotales = 0;
+
+        recette.ingredients.forEach((item) => {
+            const qteCalculee = Math.ceil(item.qte * facteur);
+            document.getElementById(`qte-${prefixe}-${idSafe(item.nom)}`).textContent = qteCalculee + ' g';
+            if (item.nom === "Eau") eau = qteCalculee;
+            if (recette.farinesPourHydratation.includes(item.nom)) farinesTotales += qteCalculee;
+        });
+
+        const elHydratation = document.getElementById('hydratation-' + prefixe);
+        if (elHydratation) {
+            const hydratation = farinesTotales > 0 ? (eau / farinesTotales) * 100 : 0;
+            elHydratation.textContent = "💧 Taux d'hydratation (eau / farines) : " + hydratation.toFixed(1).replace('.', ',') + "%";
+        }
+
+        document.getElementById('info-nb-' + prefixe).textContent = "Recette de base = " + totalBase.toLocaleString('fr-FR') + " g — " + libelleTotal + " : " + totalDemande.toLocaleString('fr-FR') + " g";
+    }
+
+    function calculerIngredientsPateFermentee(totalNecessaire) {
+        const recette = recettes.pateFermentee;
+        const totalBase = recette.ingredients.reduce((acc, item) => acc + item.qte, 0);
+        const facteur = totalBase > 0 ? totalNecessaire / totalBase : 0;
+        const resultat = {};
+        recette.ingredients.forEach((item) => { resultat[item.nom] = Math.ceil(item.qte * facteur); });
+        return resultat;
+    }
+
+    function recalculerPateFermentee(totalNecessaire, prefixe, libelleTotal) {
+        prefixe = prefixe || 'pateFermentee';
+        libelleTotal = libelleTotal || 'Total à préparer';
+        const recette = recettes.pateFermentee;
+        const totalBase = recette.ingredients.reduce((acc, item) => acc + item.qte, 0);
+        const ingredientsCalcules = calculerIngredientsPateFermentee(totalNecessaire);
+        let eau = 0, farinesTotales = 0;
+
+        recette.ingredients.forEach((item) => {
+            const qteCalculee = ingredientsCalcules[item.nom];
+            document.getElementById(`qte-${prefixe}-${idSafe(item.nom)}`).textContent = qteCalculee + ' g';
+            if (item.nom === "Eau") eau = qteCalculee;
+            if (recette.farinesPourHydratation.includes(item.nom)) farinesTotales += qteCalculee;
+        });
+
+        const elHydratation = document.getElementById('hydratation-' + prefixe);
+        if (elHydratation) {
+            const hydratation = farinesTotales > 0 ? (eau / farinesTotales) * 100 : 0;
+            elHydratation.textContent = "💧 Taux d'hydratation (eau / farine) : " + hydratation.toFixed(1).replace('.', ',') + "%";
+        }
+
+        document.getElementById('info-nb-' + prefixe).textContent = "Recette de base = " + totalBase.toLocaleString('fr-FR') + " g — " + libelleTotal + " : " + Math.ceil(totalNecessaire).toLocaleString('fr-FR') + " g";
+    }
+
+    function recalculerResume() {
+        const nbLevain = parseFloat(document.getElementById('qte-levain').value) || 0;
+        const nbBaguette = parseFloat(document.getElementById('qte-baguette').value) || 0;
+        const nbNoix = parseFloat(document.getElementById('qte-noix').value) || 0;
+        const nbMultigrain = parseFloat(document.getElementById('qte-multigrain').value) || 0;
+        const nbFocaccia = parseFloat(document.getElementById('qte-focaccia').value) || 0;
+
+        const totalLevainPainLevain = nbLevain * levainParPiece;
+        const totalPateFermentee = nbBaguette * pateFermenteeParPiece.baguette + nbNoix * pateFermenteeParPiece.noix + nbMultigrain * pateFermenteeParPiece.multigrain + nbFocaccia * pateFermenteeParPiece.focaccia;
+        const ingredientsPateFermentee = calculerIngredientsPateFermentee(totalPateFermentee);
+        const levainPourPateFermentee = ingredientsPateFermentee["Levain"] || 0;
+
+        document.getElementById('total-levain').textContent = (Math.ceil(totalLevainPainLevain) + levainPourPateFermentee).toLocaleString('fr-FR') + ' g';
+        document.getElementById('total-pate-fermentee').textContent = Math.ceil(totalPateFermentee).toLocaleString('fr-FR') + ' g';
+
+        recalculerPateFermentee(totalPateFermentee, 'pateFermentee', 'Total à préparer');
+    }
+
+    function recalculerResumeTardif() {
+        const nbBaguette = parseFloat(document.getElementById('qte-tardif-baguette').value) || 0;
+        const nbNoix = parseFloat(document.getElementById('qte-tardif-noix').value) || 0;
+        const nbMultigrain = parseFloat(document.getElementById('qte-tardif-multigrain').value) || 0;
+        const nbFocaccia = parseFloat(document.getElementById('qte-tardif-focaccia').value) || 0;
+
+        const totalPateFermentee = nbBaguette * pateFermenteeParPiece.baguette + nbNoix * pateFermenteeParPiece.noix + nbMultigrain * pateFermenteeParPiece.multigrain + nbFocaccia * pateFermenteeParPiece.focaccia;
+        const ingredientsPateFermentee = calculerIngredientsPateFermentee(totalPateFermentee);
+
+        document.getElementById('total-tardif-levain').textContent = (ingredientsPateFermentee["Levain"] || 0).toLocaleString('fr-FR') + ' g';
+        document.getElementById('total-tardif-pate-fermentee').textContent = Math.ceil(totalPateFermentee).toLocaleString('fr-FR') + ' g';
+
+        recalculerRecette('baguette', nbBaguette, 'baguette-tardif', 'Supplément à préparer');
+        recalculerRecette('noix', nbNoix, 'noix-tardif', 'Supplément à préparer');
+        recalculerRecette('multigrain', nbMultigrain, 'multigrain-tardif', 'Supplément à préparer');
+        recalculerRecette('focaccia', nbFocaccia, 'focaccia-tardif', 'Supplément à préparer');
+    }
+
+    function sauvegarderQuantites() {
+        try {
+            const CLES = ['qte-levain', 'qte-baguette', 'qte-noix', 'qte-multigrain', 'qte-focaccia'];
+            const valeurs = {};
+            CLES.forEach(id => valeurs[id] = document.getElementById(id).value);
+            localStorage.setItem('recettes-boulangerie-quantites', JSON.stringify(valeurs));
+
+            const besoins = {
+                levain: parseFloat(document.getElementById('qte-levain').value) || 0,
+                baguette: parseFloat(document.getElementById('qte-baguette').value) || 0,
+                noix: parseFloat(document.getElementById('qte-noix').value) || 0,
+                multigrain: parseFloat(document.getElementById('qte-multigrain').value) || 0,
+                focaccia: parseFloat(document.getElementById('qte-focaccia').value) || 0
+            };
+            localStorage.setItem('bakeryProductionDuJour', JSON.stringify(besoins));
+        } catch (e) {}
+    }
+
+    function chargerQuantites() {
+        try {
+            const brut = localStorage.getItem('recettes-boulangerie-quantites');
+            if (!brut) return;
+            const valeurs = JSON.parse(brut);
+            Object.keys(valeurs).forEach(id => { if (document.getElementById(id)) document.getElementById(id).value = valeurs[id]; });
+        } catch (e) {}
+    }
+
+    function toutRecalculer() {
+        recalculerRecette('levain', parseFloat(document.getElementById('qte-levain').value) || 0);
+        recalculerRecette('baguette', parseFloat(document.getElementById('qte-baguette').value) || 0);
+        recalculerRecette('noix', parseFloat(document.getElementById('qte-noix').value) || 0);
+        recalculerRecette('multigrain', parseFloat(document.getElementById('qte-multigrain').value) || 0);
+        recalculerRecette('focaccia', parseFloat(document.getElementById('qte-focaccia').value) || 0);
+        recalculerResume();
+        sauvegarderQuantites();
+    }
+
+    document.querySelectorAll('.onglet-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.onglet-btn').forEach(b => b.classList.remove('actif'));
+            document.querySelectorAll('.contenu-onglet').forEach(c => c.classList.remove('actif'));
+            btn.classList.add('actif');
+            document.getElementById(btn.getAttribute('data-cible')).classList.add('actif');
+        });
+    });
+
+    ['levain', 'baguette', 'noix', 'multigrain', 'focaccia', 'pateFermentee'].forEach((cle) => construireTableau(cle));
+    ['baguette', 'noix', 'multigrain', 'focaccia'].forEach((cle) => construireTableau(cle, cle + '-tardif'));
+
+    ['qte-levain', 'qte-baguette', 'qte-noix', 'qte-multigrain', 'qte-focaccia'].forEach(id => {
+        document.getElementById(id).addEventListener('input', toutRecalculer);
+    });
+
+    ['qte-tardif-baguette', 'qte-tardif-noix', 'qte-tardif-multigrain', 'qte-tardif-focaccia'].forEach(id => {
+        document.getElementById(id).addEventListener('input', recalculerResumeTardif);
+    });
+
+    document.getElementById('btn-reinit-tardif').addEventListener('click', () => {
+        ['qte-tardif-baguette', 'qte-tardif-noix', 'qte-tardif-multigrain', 'qte-tardif-focaccia'].forEach(id => document.getElementById(id).value = 0);
+        recalculerResumeTardif();
+    });
+
+    chargerQuantites();
+    toutRecalculer();
+    recalculerResumeTardif();
+</script>
+
+</body>
+</html>
