@@ -10,9 +10,9 @@
     p { font-size: 0.85rem; color: #6b5b45; margin-bottom: 15px; }
     .carte { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 15px; max-width: 900px; margin-bottom: 20px; }
     .produit-bloc { border: 1px solid #e0d3bd; border-radius: 8px; padding: 12px; margin-bottom: 15px; background: #faf5ed; }
-    .produit-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; }
-    .produit-titre { font-weight: bold; font-size: 1.1em; color: #7a4a1f; flex-grow: 1; border: 1px solid #ccc; padding: 5px; border-radius: 4px; background: #fff; }
-    .nb-pieces-input { width: 90px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; text-align: center; }
+    .produit-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+    .produit-titre { font-weight: bold; font-size: 1.1em; color: #7a4a1f; flex-grow: 1; border: 1px solid #ccc; padding: 5px; border-radius: 4px; background: #fff; min-width: 150px; }
+    .nb-pieces-input { width: 80px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; text-align: center; }
     table { border-collapse: collapse; width: 100%; font-size: 0.85em; background: #fff; margin-bottom: 8px; }
     th, td { border: 1px solid #e0d3bd; padding: 6px; text-align: center; }
     th { background: #7a4a1f; color: #fff; }
@@ -20,8 +20,9 @@
     .resume-produit { display: flex; justify-content: space-between; align-items: center; font-weight: bold; margin-top: 8px; font-size: 0.9em; }
     .badge-cout { background: #e8f8f5; color: #27ae60; padding: 4px 8px; border-radius: 4px; font-size: 1.05em; }
     .btn { background: #7a4a1f; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: bold; margin-right: 5px; }
+    .btn-dup { background: #2980b9; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.85em; }
     .btn-add-ingred { background: #efe0c8; color: #7a4a1f; border: 1px solid #7a4a1f; padding: 4px 8px; font-size: 0.8em; margin-top: 5px; }
-    .btn-sup { background: #c0392b; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+    .btn-sup { background: #c0392b; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; }
     .status-bar { background: #efe0c8; padding: 8px 12px; border-radius: 6px; margin-bottom: 15px; font-size: 0.85em; font-weight: bold; color: #7a4a1f; }
 </style>
 
@@ -62,13 +63,11 @@
     let fichesProduits = [];
 
     function initialiserPage() {
-        // Écoute des ingrédients en temps réel
         db.collection("ingredients").doc("master").onSnapshot((doc) => {
             if (doc.exists) masterIngredients = doc.data().items || [];
             afficherFiches();
         });
 
-        // Écoute des recettes en temps réel
         db.collection("recettes").doc("fiches").onSnapshot((doc) => {
             if (doc.exists && doc.data().items) {
                 fichesProduits = doc.data().items;
@@ -121,9 +120,10 @@
             bloc.innerHTML = `
                 <div class="produit-header">
                     <input type="text" class="produit-titre" value="${prod.nom}" onchange="modifierNomProduit(${pIdx}, this.value)">
-                    <label style="font-size:0.85em;">Pièces produites: 
+                    <label style="font-size:0.85em;">Pièces: 
                         <input type="number" min="1" class="nb-pieces-input" value="${prod.nbPieces}" onchange="modifierNbPieces(${pIdx}, parseInt(this.value)||1)">
                     </label>
+                    <button class="btn-dup" onclick="dupliquerProduit(${pIdx})">📋 Dupliquer</button>
                     <button class="btn-sup" onclick="supprimerProduit(${pIdx})">🗑️ Supprimer</button>
                 </div>
 
@@ -155,6 +155,17 @@
     function modifierNbPieces(pIdx, val) { fichesProduits[pIdx].nbPieces = val; afficherFiches(); }
     function modifierIngredNom(pIdx, iIdx, val) { fichesProduits[pIdx].ingredients[iIdx].nom = val; afficherFiches(); }
     function modifierIngredQte(pIdx, iIdx, val) { fichesProduits[pIdx].ingredients[iIdx].qte = val; afficherFiches(); }
+
+    function dupliquerProduit(pIdx) {
+        const source = fichesProduits[pIdx];
+        const copie = {
+            nom: source.nom + " (Copie)",
+            nbPieces: source.nbPieces,
+            ingredients: JSON.parse(JSON.stringify(source.ingredients))
+        };
+        fichesProduits.splice(pIdx + 1, 0, copie);
+        afficherFiches();
+    }
 
     function ajouterProduit() {
         const premierIngred = masterIngredients.length > 0 ? masterIngredients[0].nom : "Farine de blé";
