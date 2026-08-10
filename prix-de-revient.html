@@ -37,7 +37,6 @@
 
 <button class="btn" onclick="ajouterProduit()">+ Ajouter un nouveau produit / viennoiserie</button>
 <button class="btn" style="background:#27ae60;" onclick="sauvegarderCloud()">☁️ Enregistrer les recettes sur Firebase</button>
-<button class="btn" style="background:#8e44ad;" onclick="chargerDonnees()">🔄 Rafraîchir les ingrédients</button>
 
 <div id="conteneurProduits" style="margin-top:15px;"></div>
 
@@ -54,7 +53,6 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    db.enablePersistence().catch(() => console.log("Mode hors-ligne actif."));
 
     function formatPeso(nombre) {
         return "₱ " + nombre.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -62,11 +60,10 @@
 
     let masterIngredients = [];
     let fichesProduits = [];
-    let ingredientsCharges = false;
 
-    function chargerDonnees() {
-        // 1. D'abord on charge les ingrédients
-        db.collection("ingredients").doc("master").get().then((doc) => {
+    function initialiserEcouteurs() {
+        // Écoute dynamique des ingrédients (se rafraîchit dès que le client repasse en ligne)
+        db.collection("ingredients").doc("master").onSnapshot({ includeMetadataChanges: true }, (doc) => {
             if (doc.exists && doc.data().items) {
                 masterIngredients = doc.data().items;
             } else {
@@ -77,26 +74,27 @@
                     { nom: "Sel", type: "kg", prix: 25 }
                 ];
             }
-            ingredientsCharges = true;
+            afficherFiches();
+        }, (err) => {
+            console.log("Attente réseau ingrédients : " + err.message);
+        });
 
-            // 2. Ensuite seulement on charge les recettes
-            return db.collection("recettes").doc("fiches").get();
-        }).then((doc) => {
+        // Écoute dynamique des recettes
+        db.collection("recettes").doc("fiches").onSnapshot({ includeMetadataChanges: true }, (doc) => {
             if (doc.exists && doc.data().items) {
                 fichesProduits = doc.data().items;
+                document.getElementById('statusBar').textContent = "✅ Connecté & Synchronisé avec Firebase";
             } else {
                 fichesProduits = [{ nom: "Croissant", nbPieces: 10, ingredients: [{ nom: "Farine de blé", qte: 500 }, { nom: "Beurre", qte: 250 }] }];
             }
-            document.getElementById('statusBar').textContent = "✅ Connecté & Synchronisé avec Base Ingrédients (" + masterIngredients.length + " ingrédients rattachés)";
             afficherFiches();
-        }).catch((err) => {
-            document.getElementById('statusBar').textContent = "⚠️ Erreur de chargement : " + err.message;
+        }, (err) => {
+            document.getElementById('statusBar').textContent = "⚡ Mode Hors-Ligne (Données locales affichées)";
+            afficherFiches();
         });
     }
 
     function afficherFiches() {
-        if (!ingredientsCharges) return;
-
         const conteneur = document.getElementById('conteneurProduits');
         conteneur.innerHTML = '';
 
@@ -115,7 +113,6 @@
                 const coutLigne = typeUnite === 'kg' ? (ing.qte / 1000) * prixUnitaire : ing.qte * prixUnitaire;
                 coutTotalRecette += coutLigne;
 
-                // Construction des options de sélection d'ingrédients
                 let optionsIngred = masterIngredients.map(m => 
                     `<option value="${m.nom}" ${m.nom.toLowerCase() === ing.nom.toLowerCase() ? 'selected' : ''}>${m.nom} (${m.prix} ₱/${m.type})</option>`
                 ).join('');
@@ -219,7 +216,7 @@
             .catch((err) => alert("Erreur d'enregistrement : " + err.message));
     }
 
-    window.addEventListener('DOMContentLoaded', chargerDonnees);
+    window.addEventListener('DOMContentLoaded', initialiserEcouteurs);
 </script>
 
 </body>
