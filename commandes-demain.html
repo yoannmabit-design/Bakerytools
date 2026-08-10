@@ -1,269 +1,177 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ordre de Fabrication & Marges</title>
-    <style>
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 12px; background-color: #fdf6ec; color: #3b2c1a; }
-        h2 { font-size: 1.3em; margin: 5px 0 12px 0; text-align: center; color: #7a4a1f; }
-        
-        .toolbar { display: flex; gap: 8px; margin-bottom: 12px; }
-        .btn-action {
-            flex: 1; padding: 10px; background-color: #ffffff; border: 1px solid #e0d3bd;
-            border-radius: 8px; font-weight: 600; font-size: 0.85em; color: #7a4a1f;
-            display: flex; align-items: center; justify-content: center; gap: 4px;
-        }
-        .btn-action:active { background-color: #efe0c8; }
-        .btn-reset { background-color: #fceae8; color: #c0392b; border-color: #f5b7b1; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ordre de Fabrication & Coûts</title>
+<style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #fdf6ec; color: #3b2c1a; padding: 20px; margin: 0; }
+    h1 { color: #7a4a1f; font-size: 1.4rem; margin-bottom: 5px; }
+    .carte { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 15px; max-width: 900px; margin-bottom: 20px; }
+    table { border-collapse: collapse; width: 100%; font-size: 0.9em; background: #fff; }
+    th, td { border: 1px solid #e0d3bd; padding: 8px; text-align: center; }
+    th { background: #7a4a1f; color: #fff; }
+    input[type="text"], input[type="number"] { padding: 6px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+    .btn { background: #7a4a1f; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; margin-right: 5px; }
+    .btn-sup { background: #c0392b; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+    .status-bar { background: #efe0c8; padding: 8px 12px; border-radius: 6px; margin-bottom: 15px; font-size: 0.85em; font-weight: bold; color: #7a4a1f; }
+    .total-box { background: #e8f8f5; color: #27ae60; font-weight: bold; font-size: 1.1em; padding: 10px; border-radius: 6px; text-align: right; margin-top: 10px; }
+</style>
 
-        .prod-list { display: flex; flex-direction: column; gap: 10px; }
-        .prod-card {
-            display: flex; flex-direction: column; background: #ffffff; padding: 10px 12px;
-            border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); border-left: 5px solid #7a4a1f; gap: 8px;
-        }
-        .prod-card-top { display: flex; align-items: center; justify-content: space-between; }
-        .prod-name { font-weight: 700; font-size: 1.1em; color: #3b2c1a; flex: 1; padding-right: 10px; }
-        
-        .qty-wrapper { display: flex; align-items: center; justify-content: space-between; background: #fdf6ec; padding: 6px 8px; border-radius: 8px; }
-        .qty-wrapper.single-qty { justify-content: flex-end; }
-        .qty-group { display: flex; flex-direction: column; align-items: center; }
-        .qty-label { font-size: 0.7em; font-weight: bold; color: #6b5b45; text-transform: uppercase; margin-bottom: 2px; }
-        .qty-controls { display: flex; align-items: center; background-color: #efe0c8; border-radius: 6px; padding: 2px; border: 1px solid #7a4a1f; }
-        .qty-controls.add-controls { background-color: #fef9e7; border-color: #d4ac0d; }
-        .btn-qty { width: 32px; height: 32px; background-color: #7a4a1f; color: white; border: none; border-radius: 4px; font-size: 1.1em; font-weight: bold; display: flex; align-items: center; justify-content: center; }
-        .add-controls .btn-qty { background-color: #d4ac0d; color: #fff; }
-        .btn-qty:active { opacity: 0.8; }
-        input.qty-input { width: 40px; height: 32px; border: none; background: transparent; text-align: center; font-weight: bold; font-size: 1.05em; color: #7a4a1f; outline: none; }
-        .add-controls input.qty-input { color: #7d6608; }
-        .total-badge { font-weight: 800; font-size: 1.2em; color: #7a4a1f; background: #efe0c8; padding: 4px 10px; border-radius: 6px; }
-
-        .total-bar {
-            position: sticky; bottom: 10px; margin-top: 15px; background: #1a1a1a; color: #ffffff;
-            padding: 12px 16px; border-radius: 10px; display: flex; justify-content: space-between;
-            align-items: center; font-weight: bold; font-size: 1.1em; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 1px solid #7a4a1f;
-        }
-
-        .accordion-btn { width: 100%; margin-top: 25px; padding: 12px; background-color: #7a4a1f; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 0.9em; text-transform: uppercase; }
-        .accordion-content { display: none; margin-top: 10px; overflow-x: auto; }
-        .accordion-content.show { display: block; }
-        
-        table.fin-table { width: 100%; border-collapse: collapse; background: white; font-size: 0.85em; border-radius: 8px; overflow: hidden; }
-        table.fin-table th, table.fin-table td { padding: 8px 4px; border-bottom: 1px solid #eee; text-align: right; }
-        table.fin-table th:first-child, table.fin-table td:first-child { text-align: left; font-weight: 600; }
-        table.fin-table th { background-color: #efe0c8; color: #7a4a1f; }
-        .price-input { width: 48px; padding: 4px; border: 1px solid #bdc3c7; border-radius: 4px; text-align: right; font-size: 0.95em; }
-        .profit { color: #27ae60; font-weight: bold; }
-    </style>
+<!-- Firebase SDK Compat Version -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
-    <h2>Ordre de Fabrication</h2>
+<h1>📋 Ordre de Fabrication du Jour</h1>
+<div class="status-bar" id="statusBar">🔄 Connexion aux fiches prix de revient...</div>
 
-    <div class="toolbar">
-        <button class="btn-action" onclick="sortData('name')">
-            Produit <span id="sort-name-icon">AZ</span>
-        </button>
-        <button class="btn-action" onclick="sortData('qty')">
-            Quantité <span id="sort-qty-icon">▼</span>
-        </button>
-        <button class="btn-action btn-reset" onclick="resetQuantities()">
-            RAZ Qtés
-        </button>
-    </div>
+<div class="carte">
+    <table>
+        <thead>
+            <tr>
+                <th>Produit à fabriquer</th>
+                <th>Quantité (pièces)</th>
+                <th>Coût Unitaire (₱)</th>
+                <th>Coût Total Matière (₱)</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="corpsTableau"></tbody>
+    </table>
 
-    <div class="prod-list" id="prodContainer"></div>
+    <button class="btn" onclick="ajouterLigne()">+ Ajouter un produit</button>
+    <button class="btn" style="background:#27ae60;" onclick="sauvegarderOF()">☁️ Enregistrer l'OF</button>
 
-    <div class="total-bar">
-        <span>TOTAL PIÈCES</span>
-        <span id="grand-qty">0</span>
-    </div>
+    <div class="total-box" id="totalGeneral">Coût total de la fournée : ₱ 0,00</div>
+</div>
 
-    <button class="accordion-btn" onclick="toggleFinancial()">Analyse Financière & Marges ▼</button>
-    <div class="accordion-content" id="finSection">
-        <table class="fin-table">
-            <thead>
-                <tr>
-                    <th>Produit</th>
-                    <th>Rev. (₱)</th>
-                    <th>Vente (₱)</th>
-                    <th>Coût</th>
-                    <th>C.A.</th>
-                    <th>Bén.</th>
-                </tr>
-            </thead>
-            <tbody id="finBody"></tbody>
-            <tfoot>
-                <tr style="font-weight:bold; background:#f2f4f4;">
-                    <td>TOTAL</td>
-                    <td>-</td>
-                    <td>-</td>
-                    <td id="grand-cost">₱0</td>
-                    <td id="grand-ca">₱0</td>
-                    <td class="profit" id="grand-profit">₱0</td>
-                </tr>
-            </tfoot>
-        </table>
-    </div>
+<script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDuq8KS8M_Z8U7BlSp6MvE-6Y9OYYaDujE",
+      authDomain: "bakertools-ae124.firebaseapp.com",
+      projectId: "bakertools-ae124",
+      storageBucket: "bakertools-ae124.firebasestorage.app",
+      messagingSenderId: "978584667113",
+      appId: "1:978584667113:web:868cc89788aff27717c178",
+      measurementId: "G-KQNS7J2NPX"
+    };
 
-    <script>
-        const defaultProducts = [
-            { id: 101, name: "Baguette", cost: 15, price: 80, qty: 0, addQty: 0, hasAdd: true },
-            { id: 102, name: "Pain aux Noix", cost: 35, price: 180, qty: 0, addQty: 0, hasAdd: true },
-            { id: 103, name: "Pain Multigrain", cost: 30, price: 160, qty: 0, addQty: 0, hasAdd: true },
-            { id: 104, name: "Focaccia", cost: 40, price: 220, qty: 0, addQty: 0, hasAdd: true },
-            { id: 201, name: "Pâte fermentée", cost: 0, price: 0, qty: 0, addQty: 0, hasAdd: false },
-            { id: 202, name: "Pain au levain nature", cost: 30, price: 150, qty: 0, addQty: 0, hasAdd: false },
-            { id: 203, name: "Pain au levain spécial", cost: 35, price: 180, qty: 0, addQty: 0, hasAdd: false },
-            { id: 1, name: "Croissants", cost: 20, price: 100, qty: 0, addQty: 0, hasAdd: true },
-            { id: 2, name: "Pains au chocolat", cost: 24, price: 110, qty: 0, addQty: 0, hasAdd: true },
-            { id: 3, name: "Raisin roll", cost: 25, price: 110, qty: 0, addQty: 0, hasAdd: true },
-            { id: 4, name: "Cinnamon roll", cost: 22, price: 110, qty: 0, addQty: 0, hasAdd: true },
-            { id: 9, name: "Kouign amann", cost: 23, price: 200, qty: 0, addQty: 0, hasAdd: true },
-            { id: 10, name: "Brioche", cost: 75, price: 320, qty: 0, addQty: 0, hasAdd: true }
-        ];
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-        let savedData = JSON.parse(localStorage.getItem('bakeryData'));
-        let products = savedData ? savedData.map(p => ({
-            ...p,
-            addQty: p.addQty || 0,
-            hasAdd: p.hasAdd !== undefined ? p.hasAdd : true
-        })) : defaultProducts;
+    let masterIngredients = [];
+    let fichesRecettes = [];
+    let ordreFabrication = [];
 
-        let sortState = { name: 'asc', qty: 'desc' };
+    function formatPeso(nombre) {
+        return "₱ " + nombre.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
 
-        function saveData() { localStorage.setItem('bakeryData', JSON.stringify(products)); }
+    // Nettoyage de chaîne pour ignorer la casse et les espaces superflus
+    function normaliserTexte(txt) {
+        return txt ? txt.toString().trim().toLowerCase() : "";
+    }
 
-        function renderList() {
-            const container = document.getElementById('prodContainer');
-            container.innerHTML = '';
+    // Calcul dynamique du coût unitaire depuis les fiches recettes Firebase
+    function obtenirCoutUnitaire(nomProduit) {
+        const nomCible = normaliserTexte(nomProduit);
+        if (!nomCible) return 0;
 
-            products.forEach(p => {
-                const total = p.hasAdd ? (p.qty + p.addQty) : p.qty;
-                const card = document.createElement('div');
-                card.className = 'prod-card';
+        const recette = fichesRecettes.find(r => normaliserTexte(r.nom) === nomCible);
+        if (!recette || !recette.ingredients || recette.nbPieces <= 0) return 0;
 
-                let controlsHTML = p.hasAdd ? `
-                    <div class="prod-card-top">
-                        <div class="prod-name">${p.name}</div>
-                        <div class="total-badge">${total}</div>
-                    </div>
-                    <div class="qty-wrapper">
-                        <div class="qty-group">
-                            <span class="qty-label">Initiale</span>
-                            <div class="qty-controls">
-                                <button class="btn-qty" onclick="adjustQty(${p.id}, 'qty', -1)">-</button>
-                                <input type="number" class="qty-input" value="${p.qty}" onchange="setQty(${p.id}, 'qty', this.value)">
-                                <button class="btn-qty" onclick="adjustQty(${p.id}, 'qty', 1)">+</button>
-                            </div>
-                        </div>
-                        <div class="qty-group">
-                            <span class="qty-label" style="color: #d4ac0d;">Ajout</span>
-                            <div class="qty-controls add-controls">
-                                <button class="btn-qty" onclick="adjustQty(${p.id}, 'addQty', -1)">-</button>
-                                <input type="number" class="qty-input" value="${p.addQty}" onchange="setQty(${p.id}, 'addQty', this.value)">
-                                <button class="btn-qty" onclick="adjustQty(${p.id}, 'addQty', 1)">+</button>
-                            </div>
-                        </div>
-                    </div>
-                ` : `
-                    <div class="prod-card-top">
-                        <div class="prod-name">${p.name}</div>
-                    </div>
-                    <div class="qty-wrapper single-qty">
-                        <div class="qty-group">
-                            <span class="qty-label">Quantité</span>
-                            <div class="qty-controls">
-                                <button class="btn-qty" onclick="adjustQty(${p.id}, 'qty', -1)">-</button>
-                                <input type="number" class="qty-input" value="${p.qty}" onchange="setQty(${p.id}, 'qty', this.value)">
-                                <button class="btn-qty" onclick="adjustQty(${p.id}, 'qty', 1)">+</button>
-                            </div>
-                        </div>
-                    </div>
-                `;
+        let coutTotal = 0;
+        recette.ingredients.forEach(ing => {
+            const masterIng = masterIngredients.find(m => normaliserTexte(m.nom) === normaliserTexte(ing.nom));
+            const prix = masterIng ? masterIng.prix : 0;
+            const type = masterIng ? masterIng.type : 'kg';
+            coutTotal += (type === 'kg') ? (ing.qte / 1000) * prix : ing.qte * prix;
+        });
 
-                card.innerHTML = controlsHTML;
-                container.appendChild(card);
-            });
+        return coutTotal / recette.nbPieces;
+    }
 
-            updateCalculations();
-        }
+    function initialiser() {
+        // 1. Charger Ingrédients
+        db.collection("ingredients").doc("master").onSnapshot(doc => {
+            if (doc.exists) masterIngredients = doc.data().items || [];
+            afficherTableau();
+        });
 
-        function adjustQty(id, field, delta) {
-            const prod = products.find(p => p.id === id);
-            if (prod) { prod[field] = Math.max(0, prod[field] + delta); saveData(); renderList(); }
-        }
+        // 2. Charger Fiches Recettes
+        db.collection("recettes").doc("fiches").onSnapshot(doc => {
+            if (doc.exists) fichesRecettes = doc.data().items || [];
+            document.getElementById('statusBar').textContent = "✅ Connecté aux Prix de Revient (" + fichesRecettes.length + " recettes rattachées)";
+            afficherTableau();
+        });
 
-        function setQty(id, field, val) {
-            const prod = products.find(p => p.id === id);
-            if (prod) { prod[field] = Math.max(0, parseInt(val) || 0); saveData(); renderList(); }
-        }
-
-        function updatePrice(id, type, val) {
-            const prod = products.find(p => p.id === id);
-            if (prod) { prod[type] = Math.max(0, parseFloat(val) || 0); saveData(); updateCalculations(); }
-        }
-
-        function resetQuantities() {
-            if (confirm("Remettre toutes les quantités à 0 ?")) {
-                products.forEach(p => { p.qty = 0; p.addQty = 0; });
-                saveData(); renderList();
+        // 3. Charger l'OF enregistre
+        db.collection("production").doc("ordre_du_jour").onSnapshot(doc => {
+            if (doc.exists && doc.data().items) {
+                ordreFabrication = doc.data().items;
+            } else if (ordreFabrication.length === 0) {
+                ordreFabrication = [
+                    { nom: "Croissant", qte: 34 },
+                    { nom: "Baguette", qte: 50 }
+                ];
             }
-        }
+            afficherTableau();
+        });
+    }
 
-        function updateCalculations() {
-            let totalQty = 0, totalCost = 0, totalCA = 0, totalProfit = 0;
-            const finBody = document.getElementById('finBody');
-            finBody.innerHTML = '';
+    function afficherTableau() {
+        const corps = document.getElementById('corpsTableau');
+        corps.innerHTML = '';
+        let grandTotal = 0;
 
-            products.forEach(p => {
-                let currentTotalQty = p.hasAdd ? (p.qty + p.addQty) : p.qty;
-                let cost = currentTotalQty * p.cost;
-                let ca = currentTotalQty * p.price;
-                let profit = ca - cost;
+        ordreFabrication.forEach((item, index) => {
+            const coutUnitaire = obtenirCoutUnitaire(item.nom);
+            const coutTotalLigne = coutUnitaire * (item.qte || 0);
+            grandTotal += coutTotalLigne;
 
-                totalQty += currentTotalQty;
-                totalCost += cost;
-                totalCA += ca;
-                totalProfit += profit;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>
+                    <input type="text" value="${item.nom}" placeholder="Nom du produit" onchange="modifier(${index}, 'nom', this.value)" style="width:90%;">
+                </td>
+                <td>
+                    <input type="number" min="0" value="${item.qte}" onchange="modifier(${index}, 'qte', parseInt(this.value)||0)" style="width:80px;">
+                </td>
+                <td>${formatPeso(coutUnitaire)}</td>
+                <td style="font-weight:bold;">${formatPeso(coutTotalLigne)}</td>
+                <td><button class="btn-sup" onclick="supprimer(${index})">X</button></td>
+            `;
+            corps.appendChild(tr);
+        });
 
-                let tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${p.name}</td>
-                    <td><input type="number" class="price-input" value="${p.cost}" onchange="updatePrice(${p.id}, 'cost', this.value)"></td>
-                    <td><input type="number" class="price-input" value="${p.price}" onchange="updatePrice(${p.id}, 'price', this.value)"></td>
-                    <td>₱${cost.toLocaleString()}</td>
-                    <td>₱${ca.toLocaleString()}</td>
-                    <td class="profit">₱${profit.toLocaleString()}</td>
-                `;
-                finBody.appendChild(tr);
-            });
+        document.getElementById('totalGeneral').textContent = "Coût total matière de la fournée : " + formatPeso(grandTotal);
+    }
 
-            document.getElementById('grand-qty').innerText = totalQty;
-            document.getElementById('grand-cost').innerText = '₱' + totalCost.toLocaleString();
-            document.getElementById('grand-ca').innerText = '₱' + totalCA.toLocaleString();
-            document.getElementById('grand-profit').innerText = '₱' + totalProfit.toLocaleString();
-        }
+    function modifier(index, champ, valeur) {
+        ordreFabrication[index][champ] = valeur;
+        afficherTableau();
+    }
 
-        function sortData(type) {
-            if (type === 'name') {
-                sortState.name = sortState.name === 'asc' ? 'desc' : 'asc';
-                products.sort((a, b) => sortState.name === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name));
-            } else if (type === 'qty') {
-                sortState.qty = sortState.qty === 'asc' ? 'desc' : 'asc';
-                products.sort((a, b) => {
-                    let totalA = a.hasAdd ? (a.qty + a.addQty) : a.qty;
-                    let totalB = b.hasAdd ? (b.qty + b.addQty) : b.qty;
-                    return sortState.qty === 'asc' ? totalA - totalB : totalB - totalA;
-                });
-            }
-            renderList();
-        }
+    function ajouterLigne() {
+        ordreFabrication.push({ nom: "", qte: 0 });
+        afficherTableau();
+    }
 
-        function toggleFinancial() { document.getElementById('finSection').classList.toggle('show'); }
+    function supprimer(index) {
+        ordreFabrication.splice(index, 1);
+        afficherTableau();
+    }
 
-        renderList();
-    </script>
+    function sauvegarderOF() {
+        db.collection("production").doc("ordre_du_jour").set({ items: ordreFabrication })
+            .then(() => alert("Ordre de fabrication enregistré sur Firebase !"))
+            .catch(err => alert("Erreur d'enregistrement : " + err.message));
+    }
+
+    window.addEventListener('DOMContentLoaded', initialiser);
+</script>
+
 </body>
 </html>
