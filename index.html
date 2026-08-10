@@ -17,42 +17,32 @@
       color: #fdf6ec;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-      padding: 20px 0;
+      padding: 15px 0;
       flex-shrink: 0;
       border-right: 3px solid #7a4a1f;
     }
     
-    .logo-container {
+    .app-title {
       text-align: center;
-      padding: 0 15px 15px 15px;
+      padding: 0 10px 12px 10px;
       border-bottom: 1px solid #333;
-      margin-bottom: 15px;
-    }
-    .logo-container img {
-      display: block;
-      margin: 0 auto;
-      max-width: 140px;
-      width: 100%;
-      height: auto !important;
-      object-fit: contain;
-    }
-    .logo-container h1 {
+      margin-bottom: 10px;
       font-size: 0.95rem;
-      margin-top: 10px;
+      font-weight: bold;
       color: #efe0c8;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
     }
 
     nav ul { list-style: none; }
     nav li {
-      padding: 14px 20px;
+      padding: 12px 15px;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 12px;
-      font-size: 0.95rem;
+      gap: 10px;
+      font-size: 0.9rem;
       color: #d0c4b2;
       transition: all 0.2s ease;
     }
@@ -62,65 +52,48 @@
       font-weight: bold;
     }
 
-    /* Footer Ordinateur (Masqué par défaut) */
-    .mobile-footer { display: none; }
-
     /* Zone de contenu */
     main { flex-grow: 1; height: 100vh; overflow: auto; background: #fdf6ec; }
     .tab-content { display: none; height: 100%; width: 100%; border: none; }
     .tab-content.active { display: block; }
 
-    /* Optimization Mobile */
+    /* Disposition Mobile sans défilement */
     @media (max-width: 768px) {
       body { flex-direction: column; }
       nav { 
         width: 100%; 
         height: auto; 
-        padding: 0; 
+        padding: 6px 4px; 
         border-right: none; 
         border-bottom: 2px solid #7a4a1f; 
-        justify-content: flex-start;
       }
       
-      /* Masquer l'en-tête classique sur mobile */
-      .logo-container { display: none; }
+      .app-title {
+        padding: 2px 0 6px 0;
+        margin-bottom: 4px;
+        font-size: 0.85rem;
+        border-bottom: 1px solid #282828;
+      }
 
+      /* Grille fixe 5 boutons sans défilement */
       nav ul { 
-        display: flex; 
-        flex-wrap: nowrap; 
-        overflow-x: auto; 
-        background: #1a1a1a; 
-        -webkit-overflow-scrolling: touch;
+        display: grid; 
+        grid-template-columns: repeat(5, 1fr); 
+        gap: 3px; 
+        background: transparent; 
       }
       nav li { 
-        padding: 10px 12px; 
-        font-size: 0.8rem; 
-        flex: 0 0 auto; 
+        padding: 6px 2px; 
+        font-size: 0.7rem; 
+        justify-content: center; 
         text-align: center; 
-        white-space: nowrap;
+        border-radius: 4px;
+        background: #242424;
+        white-space: normal;
+        line-height: 1.1;
       }
-
-      /* Affichage du petit footer sous les onglets */
-      .mobile-footer {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        background: #111111;
-        padding: 4px 10px;
-        border-top: 1px solid #282828;
-      }
-      .mobile-footer img {
-        height: 20px;
-        width: auto;
-        object-fit: contain;
-      }
-      .mobile-footer span {
-        color: #efe0c8;
-        font-size: 0.7rem;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-        text-transform: uppercase;
+      nav li.active {
+        background: #7a4a1f;
       }
     }
   </style>
@@ -128,25 +101,14 @@
 <body>
 
   <nav>
-    <div>
-      <div class="logo-container">
-        <img src="logo.jpg" alt="Yoann's French Bakery Logo">
-        <h1>Yoann's French Bakery</h1>
-      </div>
-      <ul>
-        <li class="tab-btn active" onclick="showTab('tab-recettes', this)">🍞 Recettes</li>
-        <li class="tab-btn" onclick="showTab('tab-sans-gluten', this)">🌾 Sans Gluten</li>
-        <li class="tab-btn" onclick="showTab('tab-ingredients', this)">🏷️ Ingrédients & Prix</li>
-        <li class="tab-btn" onclick="showTab('tab-couts', this)">💰 Prix de Revient</li>
-        <li class="tab-btn" onclick="showTab('tab-commandes', this)">📋 Commandes Demain</li>
-      </ul>
-    </div>
-
-    <!-- Mini Footer Mobile -->
-    <div class="mobile-footer">
-      <img src="logo.jpg" alt="Logo">
-      <span>Yoann's French Bakery</span>
-    </div>
+    <div class="app-title">Yoann's French Bakery</div>
+    <ul>
+      <li class="tab-btn active" onclick="showTab('tab-recettes', this)">🍞<br>Recettes</li>
+      <li class="tab-btn" onclick="showTab('tab-sans-gluten', this)">🌾<br>Sans Gluten</li>
+      <li class="tab-btn" onclick="showTab('tab-ingredients', this)">🏷️<br>Ingrédients</li>
+      <li class="tab-btn" onclick="showTab('tab-couts', this)">💰<br>Coûts</li>
+      <li class="tab-btn" onclick="showTab('tab-commandes', this)">📋<br>Commandes</li>
+    </ul>
   </nav>
 
   <main>
