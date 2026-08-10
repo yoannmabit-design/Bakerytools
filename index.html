@@ -10,6 +10,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { display: flex; height: 100vh; background-color: #fdf6ec; color: #3b2c1a; overflow: hidden; }
 
+    /* Barre latérale */
     nav {
       width: 260px;
       background-color: #1a1a1a;
@@ -58,18 +59,20 @@
       font-weight: bold;
     }
 
+    /* Zone de contenu */
     main { flex-grow: 1; height: 100vh; overflow: auto; background: #fdf6ec; }
     .tab-content { display: none; height: 100%; width: 100%; border: none; }
     .tab-content.active { display: block; }
 
+    /* Responsive Mobile */
     @media (max-width: 768px) {
       body { flex-direction: column; }
       nav { width: 100%; height: auto; padding: 10px 0; border-right: none; border-bottom: 3px solid #7a4a1f; }
       .logo-container { display: flex; align-items: center; gap: 12px; padding: 5px 15px; margin-bottom: 5px; border-bottom: none; text-align: left; }
       .logo-container img { width: 45px; height: 45px; }
       .logo-container h1 { font-size: 0.9rem; margin-top: 0; }
-      nav ul { display: flex; justify-content: space-around; background: #242424; }
-      nav li { padding: 10px 5px; font-size: 0.8rem; flex: 1; justify-content: center; text-align: center; }
+      nav ul { display: flex; flex-wrap: wrap; justify-content: space-around; background: #242424; }
+      nav li { padding: 10px 5px; font-size: 0.8rem; flex: 1 1 45%; justify-content: center; text-align: center; }
     }
   </style>
 </head>
@@ -82,7 +85,7 @@
     </div>
     <ul>
       <li class="tab-btn active" onclick="showTab('tab-recettes', this)">🍞 Recettes</li>
-      <li class="tab-btn" onclick="showTab('tab-ingredients', this)">🏷️ Base Ingrédients</li>
+      <li class="tab-btn" onclick="showTab('tab-sans-gluten', this)">🌾 Pain Sans Gluten</li>
       <li class="tab-btn" onclick="showTab('tab-couts', this)">💰 Prix de Revient</li>
       <li class="tab-btn" onclick="showTab('tab-commandes', this)">📋 Commandes Demain</li>
     </ul>
@@ -90,7 +93,7 @@
 
   <main>
     <iframe id="tab-recettes" class="tab-content active" src="recettes.html"></iframe>
-    <iframe id="tab-ingredients" class="tab-content" src="ingredients-master.html"></iframe>
+    <iframe id="tab-sans-gluten" class="tab-content" src="pain_sans_gluten.html"></iframe>
     <iframe id="tab-couts" class="tab-content" src="prix-de-revient.html"></iframe>
     <iframe id="tab-commandes" class="tab-content" src="commandes-demain.html"></iframe>
   </main>
