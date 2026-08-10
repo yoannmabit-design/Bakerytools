@@ -6,29 +6,42 @@
 <title>Ordre de Fabrication & Marges</title>
 <style>
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: #f4f6f8; color: #2c3e50; margin: 0; padding: 15px; padding-bottom: 80px; }
+    body { background-color: #f4f6f8; color: #2c3e50; margin: 0; padding: 15px; padding-bottom: 90px; }
     
     .header-title { text-align: center; color: #1a2a3a; font-size: 1.3rem; margin-top: 5px; margin-bottom: 15px; font-weight: 700; }
     
-    .toolbar { display: flex; gap: 10px; margin-bottom: 15px; }
+    .toolbar { display: flex; gap: 10px; margin-bottom: 12px; }
     .btn-sort { flex: 1; background: #ffffff; border: 1px solid #dcdfe6; padding: 10px; border-radius: 10px; font-weight: 600; color: #3a4b5c; font-size: 0.9rem; cursor: pointer; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
     .btn-sort:active { background: #eef2f7; }
     
-    .status-bar { background: #e8f4f8; border-left: 4px solid #27ae60; padding: 8px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; color: #2c3e50; margin-bottom: 15px; }
+    .status-bar { background: #e8f4f8; border-left: 4px solid #27ae60; padding: 8px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; color: #2c3e50; margin-bottom: 12px; }
 
-    .card-list { display: flex; flex-direction: column; gap: 10px; }
+    .card-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
     .card { background: #ffffff; border-radius: 12px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 6px rgba(0,0,0,0.04); border-left: 5px solid #10ac84; }
     
-    .product-name { font-weight: 700; font-size: 1.05rem; color: #1e293b; flex-grow: 1; padding-right: 10px; }
-    .product-cost { font-size: 0.75rem; color: #64748b; font-weight: normal; display: block; margin-top: 2px; }
+    .product-info { flex-grow: 1; padding-right: 10px; }
+    .product-name { font-weight: 700; font-size: 1.05rem; color: #1e293b; display: block; }
+    .product-costs { font-size: 0.75rem; color: #64748b; font-weight: normal; margin-top: 3px; }
+
+    .price-input-wrapper { margin-top: 4px; display: flex; align-items: center; gap: 4px; font-size: 0.75rem; color: #475569; }
+    .price-input { width: 65px; padding: 2px 4px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.75rem; }
 
     .counter-group { display: flex; align-items: center; background: #e6f7f2; border-radius: 8px; padding: 3px; border: 1px solid #10ac84; }
     .btn-counter { background: #10ac84; color: white; border: none; width: 36px; height: 36px; border-radius: 6px; font-size: 1.2rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .btn-counter:active { background: #0e9f7a; transform: scale(0.95); }
     .counter-value { width: 42px; text-align: center; font-weight: bold; font-size: 1.1rem; color: #0e9f7a; border: none; background: transparent; }
 
-    .footer-total { position: fixed; bottom: 15px; left: 15px; right: 15px; background: #22313f; color: #ffffff; border-radius: 10px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-    .footer-total-val { font-size: 1.2rem; color: #10ac84; }
+    /* Section Financiere Placee en Bas */
+    .finance-container { margin-top: 25px; margin-bottom: 15px; }
+    .finance-toggle { background: #2c3e50; color: #fff; border: none; width: 100%; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 0.95rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+    .finance-block { background: #fff; border-radius: 10px; padding: 12px; margin-top: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); display: none; }
+    .finance-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; margin-top: 5px; }
+    .finance-card { background: #f8fafc; padding: 8px; border-radius: 6px; border: 1px solid #e2e8f0; }
+    .finance-card label { font-size: 0.7rem; color: #64748b; display: block; font-weight: bold; }
+    .finance-card span { font-size: 0.95rem; font-weight: bold; color: #0f172a; }
+
+    .footer-total { position: fixed; bottom: 15px; left: 15px; right: 15px; background: #22313f; color: #ffffff; border-radius: 10px; padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+    .footer-total-val { font-size: 1.15rem; color: #10ac84; }
 </style>
 
 <!-- Firebase SDK Compat Version -->
@@ -46,13 +59,41 @@
     <button class="btn-sort" onclick="trier('qte')">Quantité ▼</button>
 </div>
 
+<!-- Liste Tactile des Produits -->
 <div class="card-list" id="conteneurCartes"></div>
+
+<!-- Analyse Financière Placée en Bas de Page -->
+<div class="finance-container">
+    <button class="finance-toggle" onclick="toggleFinance()">
+        📊 Analyse Financière & Marges <span id="toggleIcon">▼</span>
+    </button>
+
+    <div class="finance-block" id="financeBlock">
+        <div class="finance-grid">
+            <div class="finance-card">
+                <label>C.A. PRÉVU</label>
+                <span id="finCA" style="color:#2563eb;">₱ 0,00</span>
+            </div>
+            <div class="finance-card">
+                <label>COÛT MATIÈRE</label>
+                <span id="finCout" style="color:#dc2626;">₱ 0,00</span>
+            </div>
+            <div class="finance-card">
+                <label>MARGE BRUTE</label>
+                <span id="finMarge" style="color:#16a34a;">₱ 0,00</span>
+            </div>
+        </div>
+        <div style="text-align:center; font-size:0.8rem; font-weight:bold; color:#475569; margin-top:10px;">
+            Taux de marge globale : <span id="finTauxMarge" style="color:#16a34a;">0 %</span>
+        </div>
+    </div>
+</div>
 
 <div class="footer-total">
     <span>TOTAL PIÈCES</span>
     <div>
         <span class="footer-total-val" id="totalPieces">0</span>
-        <span style="font-size:0.75rem; color:#cbd5e1; display:block; text-align:right;" id="totalCout">₱ 0,00</span>
+        <span style="font-size:0.75rem; color:#cbd5e1; display:block; text-align:right;" id="totalCout">Matière: ₱ 0,00</span>
     </div>
 </div>
 
@@ -72,11 +113,24 @@
 
     let masterIngredients = [];
     let fichesRecettes = [];
-    let quantities = {}; // { "Croissant": 12, ... }
+    let quantities = {}; 
+    let sellingPrices = {};
     let currentSort = 'az';
 
     function formatPeso(nombre) {
         return "₱ " + nombre.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function toggleFinance() {
+        const block = document.getElementById('financeBlock');
+        const icon = document.getElementById('toggleIcon');
+        if (block.style.display === 'block') {
+            block.style.display = 'none';
+            icon.textContent = '▼';
+        } else {
+            block.style.display = 'block';
+            icon.textContent = '▲';
+        }
     }
 
     function calculerCoutUnitaire(recette) {
@@ -92,25 +146,24 @@
     }
 
     function initialiser() {
-        // 1. Charger Ingrédients
         db.collection("ingredients").doc("master").onSnapshot(doc => {
             if (doc.exists) masterIngredients = doc.data().items || [];
             afficherCartes();
         });
 
-        // 2. Charger Recettes (Génère la liste exacte des cartes)
         db.collection("recettes").doc("fiches").onSnapshot(doc => {
             if (doc.exists) {
                 fichesRecettes = doc.data().items || [];
-                document.getElementById('statusBar').textContent = "✅ " + fichesRecettes.length + " produits chargés depuis Prix de Revient";
+                document.getElementById('statusBar').textContent = "✅ " + fichesRecettes.length + " produits rattachés";
             }
             afficherCartes();
         });
 
-        // 3. Charger Quantités enregistrées
         db.collection("production").doc("ordre_du_jour_quantites").onSnapshot(doc => {
-            if (doc.exists && doc.data().values) {
-                quantities = doc.data().values;
+            if (doc.exists) {
+                const data = doc.data();
+                quantities = data.values || {};
+                sellingPrices = data.prices || {};
             }
             afficherCartes();
         });
@@ -122,7 +175,6 @@
 
         let listeAffichage = [...fichesRecettes];
 
-        // Tri dynamique
         if (currentSort === 'az') {
             listeAffichage.sort((a, b) => a.nom.localeCompare(b.nom));
         } else if (currentSort === 'qte') {
@@ -131,21 +183,29 @@
 
         let totalPcs = 0;
         let totalCoutMatiere = 0;
+        let totalCA = 0;
 
         listeAffichage.forEach(recette => {
             const qte = quantities[recette.nom] || 0;
+            const prixVente = sellingPrices[recette.nom] || 0;
             const coutUnitaire = calculerCoutUnitaire(recette);
-            const coutLigne = coutUnitaire * qte;
 
             totalPcs += qte;
-            totalCoutMatiere += coutLigne;
+            totalCoutMatiere += (coutUnitaire * qte);
+            totalCA += (prixVente * qte);
 
             const card = document.createElement('div');
             card.className = 'card';
             card.innerHTML = `
-                <div>
+                <div class="product-info">
                     <span class="product-name">${recette.nom}</span>
-                    <span class="product-cost">Coût unit. ${formatPeso(coutUnitaire)}</span>
+                    <div class="product-costs">
+                        Revient: <strong>${formatPeso(coutUnitaire)}</strong>
+                    </div>
+                    <div class="price-input-wrapper">
+                        Prix Vente: ₱ 
+                        <input type="number" class="price-input" value="${prixVente}" step="0.5" onchange="changerPrixVente('${recette.nom.replace(/'/g, "\\'")}', parseFloat(this.value)||0)">
+                    </div>
                 </div>
                 <div class="counter-group">
                     <button class="btn-counter" onclick="changerQte('${recette.nom.replace(/'/g, "\\'")}', -1)">-</button>
@@ -156,14 +216,22 @@
             conteneur.appendChild(card);
         });
 
+        // Calculs des Totaux
+        const margeBrute = totalCA - totalCoutMatiere;
+        const tauxMarge = totalCA > 0 ? ((margeBrute / totalCA) * 100) : 0;
+
         document.getElementById('totalPieces').textContent = totalPcs;
-        document.getElementById('totalCout').textContent = "Coût matière total : " + formatPeso(totalCoutMatiere);
+        document.getElementById('totalCout').textContent = "Coût Matière : " + formatPeso(totalCoutMatiere);
+
+        document.getElementById('finCA').textContent = formatPeso(totalCA);
+        document.getElementById('finCout').textContent = formatPeso(totalCoutMatiere);
+        document.getElementById('finMarge').textContent = formatPeso(margeBrute);
+        document.getElementById('finTauxMarge').textContent = tauxMarge.toFixed(1) + " %";
     }
 
     function changerQte(nom, delta) {
         let actuelle = quantities[nom] || 0;
-        let nouvelle = Math.max(0, actuelle + delta);
-        quantities[nom] = nouvelle;
+        quantities[nom] = Math.max(0, actuelle + delta);
         sauvegarderFirebase();
         afficherCartes();
     }
@@ -174,14 +242,22 @@
         afficherCartes();
     }
 
+    function changerPrixVente(nom, val) {
+        sellingPrices[nom] = Math.max(0, val);
+        sauvegarderFirebase();
+        afficherCartes();
+    }
+
     function trier(mode) {
         currentSort = mode;
         afficherCartes();
     }
 
     function sauvegarderFirebase() {
-        db.collection("production").doc("ordre_du_jour_quantites").set({ values: quantities })
-            .catch(err => console.log("Erreur de sauvegarde : " + err.message));
+        db.collection("production").doc("ordre_du_jour_quantites").set({ 
+            values: quantities,
+            prices: sellingPrices
+        }).catch(err => console.log("Erreur de sauvegarde : " + err.message));
     }
 
     window.addEventListener('DOMContentLoaded', initialiser);
