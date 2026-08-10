@@ -72,7 +72,7 @@
       .logo-container img { width: 45px; height: 45px; }
       .logo-container h1 { font-size: 0.9rem; margin-top: 0; }
       nav ul { display: flex; flex-wrap: wrap; justify-content: space-around; background: #242424; }
-      nav li { padding: 10px 5px; font-size: 0.8rem; flex: 1 1 45%; justify-content: center; text-align: center; }
+      nav li { padding: 10px 5px; font-size: 0.8rem; flex: 1 1 30%; justify-content: center; text-align: center; }
     }
   </style>
 </head>
@@ -85,7 +85,8 @@
     </div>
     <ul>
       <li class="tab-btn active" onclick="showTab('tab-recettes', this)">🍞 Recettes</li>
-      <li class="tab-btn" onclick="showTab('tab-sans-gluten', this)">🌾 Pain Sans Gluten</li>
+      <li class="tab-btn" onclick="showTab('tab-sans-gluten', this)">🌾 Sans Gluten</li>
+      <li class="tab-btn" onclick="showTab('tab-ingredients', this)">🏷️ Ingrédients & Prix</li>
       <li class="tab-btn" onclick="showTab('tab-couts', this)">💰 Prix de Revient</li>
       <li class="tab-btn" onclick="showTab('tab-commandes', this)">📋 Commandes Demain</li>
     </ul>
@@ -94,6 +95,7 @@
   <main>
     <iframe id="tab-recettes" class="tab-content active" src="recettes.html"></iframe>
     <iframe id="tab-sans-gluten" class="tab-content" src="pain_sans_gluten.html"></iframe>
+    <iframe id="tab-ingredients" class="tab-content" src="ingredients-master.html"></iframe>
     <iframe id="tab-couts" class="tab-content" src="prix-de-revient.html"></iframe>
     <iframe id="tab-commandes" class="tab-content" src="commandes-demain.html"></iframe>
   </main>
