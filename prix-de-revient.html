@@ -11,6 +11,7 @@
     .carte { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 15px; max-width: 900px; margin-bottom: 20px; }
     .produit-bloc { border: 1px solid #e0d3bd; border-radius: 8px; padding: 12px; margin-bottom: 15px; background: #faf5ed; }
     .produit-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+    .code-produit { font-family: ui-monospace, monospace; font-size: 0.8em; background: #efe0c8; color: #7a4a1f; padding: 5px 8px; border-radius: 4px; font-weight: bold; letter-spacing: 0.03em; }
     .produit-titre { font-weight: bold; font-size: 1.1em; color: #7a4a1f; flex-grow: 1; border: 1px solid #ccc; padding: 5px; border-radius: 4px; background: #fff; min-width: 150px; }
     .nb-pieces-input { width: 80px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; text-align: center; }
     table { border-collapse: collapse; width: 100%; font-size: 0.85em; background: #fff; margin-bottom: 8px; }
@@ -141,6 +142,7 @@ body {
 
             bloc.innerHTML = `
                 <div class="produit-header">
+                    <span class="code-produit" title="Référence interne — ne change jamais">${prod.id || '—'}</span>
                     <input type="text" class="produit-titre" value="${prod.nom}" onchange="modifierNomProduit(${pIdx}, this.value)">
                     <label style="font-size:0.85em;">Pièces: 
                         <input type="number" min="1" class="nb-pieces-input" value="${prod.nbPieces}" onchange="modifierNbPieces(${pIdx}, parseInt(this.value)||1)">
@@ -213,10 +215,45 @@ body {
         afficherFiches();
     }
 
-    function sauvegarderCloud() {
-        db.collection("recettes").doc("fiches").set({ items: fichesProduits })
-            .then(() => alert("Recettes enregistrées et synchronisées !"))
-            .catch((err) => alert("Erreur d'enregistrement : " + err.message));
+    async function sauvegarderCloud() {
+        try {
+            // On relit la version du serveur : la copie en mémoire peut être
+            // périmée (page restée ouverte, passage hors-ligne), et l'écrire
+            // telle quelle effacerait les champs ajoutés entre-temps.
+            const snap = await db.collection("recettes").doc("fiches").get({ source: "server" });
+            const distants = (snap.exists && snap.data().items) ? snap.data().items : [];
+
+            const parId  = {};
+            const parNom = {};
+            distants.forEach(d => {
+                if (d.id) parId[d.id] = d;
+                if (d.nom) parNom[d.nom.trim().toLowerCase()] = d;
+            });
+
+            const aEcrire = fichesProduits.map(local => {
+                const distant = (local.id && parId[local.id])
+                    || (local.nom && parNom[local.nom.trim().toLowerCase()])
+                    || {};
+                // Les champs que cette page ne gère pas (id, et tout ce qui
+                // viendra plus tard) sont repris du serveur.
+                return Object.assign({}, distant, local, {
+                    id: local.id || distant.id || undefined
+                });
+            }).map(o => {
+                if (o.id === undefined) delete o.id;
+                return o;
+            });
+
+            const perdus = distants.filter(d => d.id &&
+                !aEcrire.some(o => o.id === d.id)).length;
+            if (perdus && !confirm(perdus + " fiche(s) présente(s) sur le serveur ne figurent pas ici et seront supprimées.\n\nContinuer ?")) return;
+
+            await db.collection("recettes").doc("fiches").set({ items: aEcrire });
+            fichesProduits = aEcrire;
+            alert("Recettes enregistrées et synchronisées !");
+        } catch (err) {
+            alert("Erreur d'enregistrement : " + err.message);
+        }
     }
 
     window.addEventListener('DOMContentLoaded', initialiserEcouteurs);
