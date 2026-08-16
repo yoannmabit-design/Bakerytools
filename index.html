@@ -273,7 +273,14 @@
         <h2 style="margin-bottom:10px; font-size:1.1rem;">➕ Ajouts</h2>
         <p class="sous-titre">Ce que vous produisez en plus des commandes en ligne.</p>
         <div class="grille-quantites" id="grilleQuantitesTardif"></div>
-        <button class="btn" style="background:none; border:1px solid #b05a2f; color:#b05a2f;" onclick="reinitialiserTardif()">Réinitialiser les ajouts</button>
+        <button class="btn" style="background:none; border:1px solid #b05a2f; color:#b05a2f;" onclick="reinitialiserAjouts()">Réinitialiser les ajouts</button>
+      </div>
+
+      <div class="carte carte-tardive">
+        <h2 style="margin-bottom:10px; font-size:1.1rem;">⏱️ Commande tardive</h2>
+        <p class="sous-titre">Demandes reçues après le lancement de la production.</p>
+        <div class="grille-quantites" id="grilleQuantitesTardifReel"></div>
+        <button class="btn" style="background:none; border:1px solid #b05a2f; color:#b05a2f;" onclick="reinitialiserTardif()">Réinitialiser la commande tardive</button>
       </div>
 
       <div class="carte" id="syntheseBasesWrapper">
@@ -1827,6 +1834,19 @@
             grilleT.appendChild(div);
         });
 
+        // --- Grille des commandes tardives ---
+        const grilleTardif = document.getElementById('grilleQuantitesTardifReel');
+        if (grilleTardif) {
+            grilleTardif.innerHTML = '';
+            fiches.forEach(f => {
+                const val = quantitesTardif[f.nom] || 0;
+                const div = document.createElement('div');
+                div.className = 'champ-qte';
+                div.innerHTML = `<label>${f.nom}</label><input type="number" min="0" step="1" value="${val}" onchange="modifierQteTardif('${f.nom.replace(/'/g, "\\'")}', parseFloat(this.value)||0)">`;
+                grilleTardif.appendChild(div);
+            });
+        }
+
         // --- Onglets par pain ---
         const conteneurOnglets = document.getElementById('ongletsPains');
         conteneurOnglets.innerHTML = '';
@@ -1867,9 +1887,17 @@
         afficherRecettesPains();
         if (typeof afficherCommandes === 'function') afficherCommandes();
     }
-    function reinitialiserTardif() {
+    function reinitialiserAjouts() {
         if (!confirm("Remettre tous les ajouts à zéro ?")) return;
         quantitesCommandes = {};
+        sauvegarderCommandesCloud();
+        afficherRecettesPains();
+        if (typeof afficherCommandes === 'function') afficherCommandes();
+    }
+
+    function reinitialiserTardif() {
+        if (!confirm("Remettre la commande tardive à zéro ?")) return;
+        quantitesTardif = {};
         sauvegarderCommandesCloud();
         afficherRecettesPains();
         if (typeof afficherCommandes === 'function') afficherCommandes();
@@ -1880,9 +1908,11 @@
         const div = document.createElement('div');
         div.className = 'carte';
 
-        const qte = qteBoutique(fiche);                        // commandes clients
-        const qteT = quantitesCommandes[fiche.nom] || 0;       // vos ajouts
-        const facteur = fiche.nbPieces > 0 ? qte / fiche.nbPieces : 0;
+        const qte  = qteBoutique(fiche);                       // commandes clients
+        const qteA = quantitesCommandes[fiche.nom] || 0;       // vos ajouts
+        const qteT = quantitesTardif[fiche.nom] || 0;          // commande tardive
+        const facteur  = fiche.nbPieces > 0 ? qte  / fiche.nbPieces : 0;
+        const facteurA = fiche.nbPieces > 0 ? qteA / fiche.nbPieces : 0;
         const facteurT = fiche.nbPieces > 0 ? qteT / fiche.nbPieces : 0;
 
         let lignes = '';
@@ -1894,14 +1924,12 @@
 
         const hydratation = calculerHydratation(fiche);
 
-        let lignesTardif = '';
-        if (qteT > 0) {
-            (fiche.ingredients || []).forEach(ing => {
-                const label = ing.type === 'composite' ? `${ing.nom} (base)` : ing.nom;
-                const qteCalc = Math.ceil((ing.qte || 0) * facteurT);
-                lignesTardif += `<tr><td>${label}</td><td class="qte-cell">${qteCalc} g</td></tr>`;
-            });
-        }
+        const lignesPour = (f) => (fiche.ingredients || []).map(ing => {
+            const label = ing.type === 'composite' ? `${ing.nom} (base)` : ing.nom;
+            return `<tr><td>${label}</td><td class="qte-cell">${Math.ceil((ing.qte || 0) * f)} g</td></tr>`;
+        }).join('');
+        const lignesAjouts = qteA > 0 ? lignesPour(facteurA) : '';
+        const lignesTardif = qteT > 0 ? lignesPour(facteurT) : '';
 
         div.innerHTML = `
             <h2 style="color:#7a4a1f; margin-bottom:10px;">${fiche.nom}</h2>
@@ -1910,10 +1938,18 @@
                 <tbody>${lignes}</tbody>
             </table>
             <div class="info-hydratation">💧 Taux d'hydratation : ${hydratation.toFixed(1).replace('.', ',')}%</div>
-            <div class="info-nb">Commandes boutique : ${qte} · Ajouts : ${qteT} · <strong>Total : ${qte + qteT}</strong></div>
+            <div class="info-nb">Commandes boutique : ${qte} · Ajouts : ${qteA} · Tardif : ${qteT} · <strong>Total : ${qte + qteA + qteT}</strong></div>
+            ${qteA > 0 ? `
+                <div class="supplement-tardif">
+                    <h3>➕ Supplément pour vos ajouts (${qteA} pièce(s))</h3>
+                    <table>
+                        <thead><tr><th>Ingrédient</th><th>Quantité supplémentaire</th></tr></thead>
+                        <tbody>${lignesAjouts}</tbody>
+                    </table>
+                </div>` : ''}
             ${qteT > 0 ? `
                 <div class="supplement-tardif">
-                    <h3>➕ Supplément pour vos ajouts (${qteT} pièce(s))</h3>
+                    <h3>⏱️ Supplément commande tardive (${qteT} pièce(s))</h3>
                     <table>
                         <thead><tr><th>Ingrédient</th><th>Quantité supplémentaire</th></tr></thead>
                         <tbody>${lignesTardif}</tbody>
@@ -1950,8 +1986,8 @@
         const basesNormal = {}, basesTardif = {};
 
         fichesPainsListe.forEach(f => {
-            const qte = qteBoutique(f);
-            const qteT = quantitesCommandes[f.nom] || 0;
+            const qte  = qteBoutique(f) + (quantitesCommandes[f.nom] || 0);
+            const qteT = quantitesTardif[f.nom] || 0;
             const facteur = f.nbPieces > 0 ? qte / f.nbPieces : 0;
             const facteurT = f.nbPieces > 0 ? qteT / f.nbPieces : 0;
 
