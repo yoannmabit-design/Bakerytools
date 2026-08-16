@@ -2126,6 +2126,7 @@
        ========================================================== */
     let quantitesCommandes = {};   // ajouts manuels (hors-site)
     let commandesBoutique = {};    // { code produit : quantité } — venant de la boutique
+    let nomsBoutique = {};         // { clé publiée : nom du produit } — rattrapage par le nom
     let dateBoutique = '';         // date de livraison couverte par ces commandes
     let prixVenteCommandes = {};
     let stockProduits = {}; // { nomFiche: quantité en stock (produits finis) }
@@ -2170,18 +2171,31 @@
             if (doc.exists) {
                 const d = doc.data();
                 commandesBoutique = d.totaux || {};
+                nomsBoutique = d.noms || {};
                 dateBoutique = d.date || '';
             } else {
-                commandesBoutique = {}; dateBoutique = '';
+                commandesBoutique = {}; nomsBoutique = {}; dateBoutique = '';
             }
             afficherCommandes();
             if (typeof afficherRecettesPains === 'function') afficherRecettesPains();
         }, (err) => console.log("Commandes boutique : " + err.message));
     }
 
-    // Quantité issue de la boutique pour une fiche, retrouvée par son code produit.
+    // Clé de rapprochement par nom, insensible aux accents et à la casse.
+    function cleNom(t) {
+        return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+
+    // Quantité issue de la boutique : d'abord par code produit, sinon par nom
+    // (utile tant que la boutique publie encore sous ses anciens identifiants).
     function qteBoutique(fiche) {
-        return (fiche.id && commandesBoutique[fiche.id]) ? commandesBoutique[fiche.id] : 0;
+        if (fiche.id && commandesBoutique[fiche.id]) return commandesBoutique[fiche.id];
+        const cible = cleNom(fiche.nom);
+        for (const k in commandesBoutique) {
+            if (cleNom(nomsBoutique[k] || k) === cible) return commandesBoutique[k];
+        }
+        return 0;
     }
 
     function afficherCommandes() {
