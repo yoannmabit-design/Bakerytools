@@ -217,6 +217,7 @@
 
       <div class="carte" style="max-width:900px; max-height:33vh; overflow-y:auto;">
         <h2 style="color:#7a4a1f; margin-bottom:10px; font-size:1.1rem;">📋 Résumé des commandes</h2>
+        <div id="rappelBoutique" style="font-size:0.85rem; color:#2f4858; background:#e8f0f4; padding:6px 10px; border-radius:6px; margin-bottom:8px;"></div>
         <div id="resumeCommandes"></div>
       </div>
 
@@ -937,10 +938,11 @@
 
         produitsVendables().forEach(f => {
             if (!categoriesResume.includes(f.categorie)) return;
-            const qte = (quantitesCommandes[f.nom] || 0) + (quantitesTardif[f.nom] || 0);
+            const qteB = qteBoutique(f);
+            const qte = qteB + (quantitesCommandes[f.nom] || 0) + (quantitesTardif[f.nom] || 0);
             if (qte <= 0) return;
             if (!parCategorie[f.categorie]) parCategorie[f.categorie] = [];
-            parCategorie[f.categorie].push({ nom: f.nom, qte });
+            parCategorie[f.categorie].push({ nom: f.nom, qte, qteB });
         });
 
         let html = '';
@@ -950,11 +952,19 @@
             items.sort((a, b) => a.nom.localeCompare(b.nom));
             html += `<div style="margin-bottom:10px;">
                 <div style="font-weight:bold; color:#7a4a1f; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">${cat}</div>
-                ${items.map(i => `<div style="display:flex; justify-content:space-between; padding:3px 0; border-bottom:1px solid #f0e6d2; font-size:0.95rem;"><span>${i.nom}</span><span style="font-weight:bold; color:#7a4a1f;">${i.qte}</span></div>`).join('')}
+                ${items.map(i => `<div style="display:flex; justify-content:space-between; padding:3px 0; border-bottom:1px solid #f0e6d2; font-size:0.95rem;"><span>${i.nom}${i.qteB > 0 ? ` <span style="color:#2f4858; font-size:0.8em;">(dont ${i.qteB} en ligne)</span>` : ''}</span><span style="font-weight:bold; color:#7a4a1f;">${i.qte}</span></div>`).join('')}
             </div>`;
         });
 
         conteneur.innerHTML = html || '<p style="color:#8a7860; font-size:0.85em;">Aucune commande pour l\'instant.</p>';
+
+        const rappel = document.getElementById('rappelBoutique');
+        if (rappel) {
+            const totalBout = Object.values(commandesBoutique).reduce((a, b) => a + b, 0);
+            rappel.textContent = dateBoutique
+                ? `🛒 Livraison du ${dateBoutique} — ${totalBout} pièce(s) commandée(s) en ligne`
+                : "🛒 Aucune commande en ligne pour la prochaine livraison";
+        }
     }
 
     function afficherDashboard(totalCA, totalCoutMatiere, margeBrute, tauxMarge, totalPcs, nbProduits) {
