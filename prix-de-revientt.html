@@ -5,42 +5,63 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Calcul Prix de Revient - Tous Produits (₱)</title>
 <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #fdf6ec; color: #3b2c1a; padding: 20px; margin: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #fdf6ec; color: #3b2c1a; padding: 20px; margin: 0; padding-bottom: 70px; }
     h1 { color: #7a4a1f; font-size: 1.4rem; margin-bottom: 5px; }
-    p { font-size: 0.85rem; color: #6b5b45; margin-bottom: 15px; }
     .carte { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 15px; max-width: 900px; margin-bottom: 20px; }
-    .produit-bloc { border: 1px solid #e0d3bd; border-radius: 8px; padding: 12px; margin-bottom: 15px; background: #faf5ed; }
-    .produit-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
-    .code-produit { font-family: ui-monospace, monospace; font-size: 0.8em; background: #efe0c8; color: #7a4a1f; padding: 5px 8px; border-radius: 4px; font-weight: bold; letter-spacing: 0.03em; }
+    .produit-bloc { border: 1px solid #e0d3bd; border-radius: 8px; padding: 12px; margin-bottom: 10px; background: #faf5ed; max-width: 900px; }
+    .produit-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
     .produit-titre { font-weight: bold; font-size: 1.1em; color: #7a4a1f; flex-grow: 1; border: 1px solid #ccc; padding: 5px; border-radius: 4px; background: #fff; min-width: 150px; }
+    .produit-nom-vue { font-weight: bold; font-size: 1.1em; color: #7a4a1f; flex-grow: 1; min-width: 150px; }
+    .code-produit { font-family: ui-monospace, monospace; font-size: 0.78em; background: #efe0c8; color: #7a4a1f; padding: 4px 8px; border-radius: 4px; font-weight: bold; letter-spacing: .03em; }
+    .code-produit.absent { background: #f6e2de; color: #8c2f22; }
+    .chevron { background: none; border: none; font-size: 1.1em; color: #7a4a1f; cursor: pointer; padding: 2px 6px; }
+    .corps { margin-top: 10px; }
     .nb-pieces-input { width: 80px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; text-align: center; }
     table { border-collapse: collapse; width: 100%; font-size: 0.85em; background: #fff; margin-bottom: 8px; }
     th, td { border: 1px solid #e0d3bd; padding: 6px; text-align: center; }
     th { background: #7a4a1f; color: #fff; }
     select, input[type="number"] { padding: 4px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-    .resume-produit { display: flex; justify-content: space-between; align-items: center; font-weight: bold; margin-top: 8px; font-size: 0.9em; }
+    .resume-produit { display: flex; justify-content: space-between; align-items: center; font-weight: bold; margin-top: 8px; font-size: 0.9em; flex-wrap: wrap; gap: 6px; }
     .badge-cout { background: #e8f8f5; color: #27ae60; padding: 4px 8px; border-radius: 4px; font-size: 1.05em; }
-    .btn { background: #7a4a1f; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: bold; margin-right: 5px; }
+    .btn { background: #7a4a1f; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: bold; margin-right: 5px; margin-bottom: 5px; }
+    .btn.secondaire { background: #efe0c8; color: #7a4a1f; border: 1px solid #c9b393; }
     .btn-dup { background: #2980b9; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.85em; }
     .btn-add-ingred { background: #efe0c8; color: #7a4a1f; border: 1px solid #7a4a1f; padding: 4px 8px; font-size: 0.8em; margin-top: 5px; }
     .btn-sup { background: #c0392b; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; }
-    .status-bar { background: #efe0c8; padding: 8px 12px; border-radius: 6px; margin-bottom: 15px; font-size: 0.85em; font-weight: bold; color: #7a4a1f; }
-/* Ajouter une marge de sécurité au bas de la page */
-body {
-    padding-bottom: 70px !important;
-}</style>
+    .status-bar { background: #efe0c8; padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; font-size: 0.85em; font-weight: bold; color: #7a4a1f; max-width: 900px; }
+    .barre-mode { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; max-width: 900px; }
+    .bascule { display: flex; border: 1px solid #c9b393; border-radius: 6px; overflow: hidden; }
+    .bascule button { background: #fff; border: none; padding: 9px 16px; font-size: 0.85em; font-weight: bold; color: #7a4a1f; cursor: pointer; }
+    .bascule button[aria-pressed="true"] { background: #7a4a1f; color: #fff; }
+    .avert-edition { background: #fdf0e0; border: 1px solid #e0c9a6; color: #7a4a1f; padding: 8px 12px; border-radius: 6px; font-size: 0.82em; max-width: 900px; margin-bottom: 12px; }
+</style>
 
-<!-- Firebase SDK Compat Version -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
 <h1>💰 Calcul du Prix de Revient Matière</h1>
 <div class="status-bar" id="statusBar">🔄 Synchronisation avec Firebase...</div>
 
-<button class="btn" onclick="ajouterProduit()">+ Ajouter un nouveau produit / viennoiserie</button>
-<button class="btn" style="background:#27ae60;" onclick="sauvegarderCloud()">☁️ Enregistrer les recettes sur Firebase</button>
+<div class="barre-mode">
+  <div class="bascule">
+    <button id="btnVue" aria-pressed="true">👁️ Vue simple</button>
+    <button id="btnEdition" aria-pressed="false">✏️ Édition</button>
+  </div>
+  <button class="btn secondaire" id="btnPlier">Tout déplier</button>
+  <button class="btn secondaire" id="btnExport">📊 Exporter en Excel</button>
+</div>
+
+<div class="avert-edition" id="avertEdition" hidden>
+  Mode édition : les fiches sont modifiables. Pensez à enregistrer avant de quitter.
+</div>
+
+<div id="outilsEdition" hidden>
+  <button class="btn" id="btnAjouter">+ Ajouter un nouveau produit / viennoiserie</button>
+  <button class="btn" style="background:#27ae60;" id="btnEnregistrer">☁️ Enregistrer les recettes sur Firebase</button>
+</div>
 
 <div id="conteneurProduits" style="margin-top:15px;"></div>
 
@@ -58,15 +79,17 @@ body {
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    function formatPeso(nombre) {
-        return "₱ " + nombre.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    function formatPeso(n) {
+        return "₱ " + n.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
     let masterIngredients = [];
     let fichesProduits = [];
+    let modeEdition = false;
+    const ouverts = new Set();     // fiches dépliées, par index
 
+    /* ---------- Écouteurs Firestore ---------- */
     function initialiserEcouteurs() {
-        // Écoute dynamique des ingrédients (se rafraîchit dès que le client repasse en ligne)
         db.collection("ingredients").doc("master").onSnapshot({ includeMetadataChanges: true }, (doc) => {
             if (doc.exists && doc.data().items) {
                 masterIngredients = doc.data().items;
@@ -79,134 +102,176 @@ body {
                 ];
             }
             afficherFiches();
-        }, (err) => {
-            console.log("Attente réseau ingrédients : " + err.message);
-        });
+        }, (err) => console.log("Attente réseau ingrédients : " + err.message));
 
-        // Écoute dynamique des recettes
         db.collection("recettes").doc("fiches").onSnapshot({ includeMetadataChanges: true }, (doc) => {
             if (doc.exists && doc.data().items) {
+                // En édition, on ne remplace pas le travail en cours par le serveur.
+                if (modeEdition) {
+                    document.getElementById('statusBar').textContent =
+                        "✏️ Édition en cours — modifications distantes non appliquées";
+                    return;
+                }
                 fichesProduits = doc.data().items;
                 document.getElementById('statusBar').textContent = "✅ Connecté & Synchronisé avec Firebase";
-            } else {
-                fichesProduits = [{ nom: "Croissant", nbPieces: 10, ingredients: [{ nom: "Farine de blé", qte: 500 }, { nom: "Beurre", qte: 250 }] }];
+            } else if (!fichesProduits.length) {
+                fichesProduits = [{ nom: "Croissant", nbPieces: 10, ingredients: [
+                    { nom: "Farine de blé", qte: 500 }, { nom: "Beurre", qte: 250 }] }];
             }
             afficherFiches();
-        }, (err) => {
+        }, () => {
             document.getElementById('statusBar').textContent = "⚡ Mode Hors-Ligne (Données locales affichées)";
             afficherFiches();
         });
     }
 
+    /* ---------- Calculs ---------- */
+    function coutRecette(prod) {
+        let total = 0;
+        (prod.ingredients || []).forEach(ing => {
+            const info = masterIngredients.find(m => m.nom.toLowerCase() === ing.nom.toLowerCase());
+            const prix = info ? info.prix : 0;
+            const type = info ? info.type : 'kg';
+            total += type === 'kg' ? (ing.qte / 1000) * prix : ing.qte * prix;
+        });
+        return total;
+    }
+
+    /* ---------- Affichage ---------- */
     function afficherFiches() {
         const conteneur = document.getElementById('conteneurProduits');
         conteneur.innerHTML = '';
 
         fichesProduits.forEach((prod, pIdx) => {
             const bloc = document.createElement('div');
-            bloc.className = 'carte produit-bloc';
+            bloc.className = 'produit-bloc';
 
-            let lignesHTML = '';
-            let coutTotalRecette = 0;
+            const total = coutRecette(prod);
+            const unitaire = prod.nbPieces > 0 ? total / prod.nbPieces : 0;
+            const deplie = ouverts.has(pIdx);
 
-            prod.ingredients.forEach((ing, iIdx) => {
-                const infoIngred = masterIngredients.find(m => m.nom.toLowerCase() === ing.nom.toLowerCase());
-                const prixUnitaire = infoIngred ? infoIngred.prix : 0;
-                const typeUnite = infoIngred ? infoIngred.type : 'kg';
-
-                const coutLigne = typeUnite === 'kg' ? (ing.qte / 1000) * prixUnitaire : ing.qte * prixUnitaire;
-                coutTotalRecette += coutLigne;
-
-                let optionsIngred = masterIngredients.map(m => 
-                    `<option value="${m.nom}" ${m.nom.toLowerCase() === ing.nom.toLowerCase() ? 'selected' : ''}>${m.nom} (${m.prix} ₱/${m.type})</option>`
-                ).join('');
-
-                lignesHTML += `
-                    <tr>
-                        <td style="text-align:left;">
-                            <select onchange="modifierIngredNom(${pIdx}, ${iIdx}, this.value)">
-                                ${optionsIngred}
-                            </select>
-                        </td>
-                        <td>
-                            <input type="number" step="0.1" value="${ing.qte}" onchange="modifierIngredQte(${pIdx}, ${iIdx}, parseFloat(this.value)||0)" style="width:70px;"> 
-                            ${typeUnite === 'kg' ? 'g' : 'unité(s)'}
-                        </td>
-                        <td>${formatPeso(coutLigne)}</td>
-                        <td><button class="btn-sup" onclick="supprimerIngred(${pIdx}, ${iIdx})">X</button></td>
-                    </tr>
-                `;
-            });
-
-            const coutUnitaire = prod.nbPieces > 0 ? (coutTotalRecette / prod.nbPieces) : 0;
+            const entete = modeEdition ? `
+                <input type="text" class="produit-titre" value="${(prod.nom || '').replace(/"/g, '&quot;')}"
+                       onchange="modifierNomProduit(${pIdx}, this.value)">
+                <label style="font-size:0.85em;">Pièces:
+                    <input type="number" min="1" class="nb-pieces-input" value="${prod.nbPieces || 1}"
+                           onchange="modifierNbPieces(${pIdx}, parseInt(this.value)||1)">
+                </label>
+                <button class="btn-dup" onclick="dupliquerProduit(${pIdx})">📋</button>
+                <button class="btn-sup" onclick="supprimerProduit(${pIdx})">🗑️</button>`
+              : `
+                <span class="produit-nom-vue">${prod.nom || ''}</span>
+                <span style="font-size:0.85em;">${prod.nbPieces || 1} pièce(s)</span>
+                <span class="badge-cout">${formatPeso(unitaire)} / pièce</span>`;
 
             bloc.innerHTML = `
                 <div class="produit-header">
-                    <span class="code-produit" title="Référence interne — ne change jamais">${prod.id || '—'}</span>
-                    <input type="text" class="produit-titre" value="${prod.nom}" onchange="modifierNomProduit(${pIdx}, this.value)">
-                    <label style="font-size:0.85em;">Pièces: 
-                        <input type="number" min="1" class="nb-pieces-input" value="${prod.nbPieces}" onchange="modifierNbPieces(${pIdx}, parseInt(this.value)||1)">
-                    </label>
-                    <button class="btn-dup" onclick="dupliquerProduit(${pIdx})">📋 Dupliquer</button>
-                    <button class="btn-sup" onclick="supprimerProduit(${pIdx})">🗑️ Supprimer</button>
+                    <button class="chevron" onclick="basculer(${pIdx})">${deplie ? '▾' : '▸'}</button>
+                    <span class="code-produit ${prod.id ? '' : 'absent'}"
+                          title="Référence interne — ne change jamais">${prod.id || 'sans code'}</span>
+                    ${entete}
                 </div>
-
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Ingrédient</th>
-                            <th>Quantité pour la recette</th>
-                            <th>Coût (₱)</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>${lignesHTML}</tbody>
-                </table>
-
-                <button class="btn btn-add-ingred" onclick="ajouterIngred(${pIdx})">+ Ajouter un ingrédient</button>
-
-                <div class="resume-produit">
-                    <span>Coût total recette : ${formatPeso(coutTotalRecette)}</span>
-                    <span>Coût matière par pièce : <span class="badge-cout">${formatPeso(coutUnitaire)}</span></span>
-                </div>
-            `;
+                <div class="corps" ${deplie ? '' : 'hidden'}>${corpsFiche(prod, pIdx, total, unitaire)}</div>`;
 
             conteneur.appendChild(bloc);
         });
+
+        document.getElementById('btnPlier').textContent =
+            ouverts.size ? 'Tout replier' : 'Tout déplier';
     }
 
+    function corpsFiche(prod, pIdx, total, unitaire) {
+        let lignes = '';
+        (prod.ingredients || []).forEach((ing, iIdx) => {
+            const info = masterIngredients.find(m => m.nom.toLowerCase() === ing.nom.toLowerCase());
+            const prix = info ? info.prix : 0;
+            const type = info ? info.type : 'kg';
+            const cout = type === 'kg' ? (ing.qte / 1000) * prix : ing.qte * prix;
+
+            const cellNom = modeEdition
+                ? `<select onchange="modifierIngredNom(${pIdx}, ${iIdx}, this.value)">${
+                    masterIngredients.map(m =>
+                      `<option value="${m.nom}" ${m.nom.toLowerCase() === ing.nom.toLowerCase() ? 'selected' : ''}>${m.nom} (${m.prix} ₱/${m.type})</option>`
+                    ).join('')}</select>`
+                : ing.nom;
+
+            const cellQte = modeEdition
+                ? `<input type="number" step="0.1" value="${ing.qte}" style="width:70px;"
+                     onchange="modifierIngredQte(${pIdx}, ${iIdx}, parseFloat(this.value)||0)"> ${type === 'kg' ? 'g' : 'u.'}`
+                : `${ing.qte} ${type === 'kg' ? 'g' : 'u.'}`;
+
+            lignes += `<tr>
+                <td style="text-align:left;">${cellNom}</td>
+                <td>${cellQte}</td>
+                <td>${formatPeso(cout)}</td>
+                ${modeEdition ? `<td><button class="btn-sup" onclick="supprimerIngred(${pIdx}, ${iIdx})">X</button></td>` : ''}
+            </tr>`;
+        });
+
+        return `
+            <table>
+                <thead><tr>
+                    <th>Ingrédient</th><th>Quantité</th><th>Coût (₱)</th>
+                    ${modeEdition ? '<th>Action</th>' : ''}
+                </tr></thead>
+                <tbody>${lignes}</tbody>
+            </table>
+            ${modeEdition ? `<button class="btn btn-add-ingred" onclick="ajouterIngred(${pIdx})">+ Ajouter un ingrédient</button>` : ''}
+            <div class="resume-produit">
+                <span>Coût total recette : ${formatPeso(total)}</span>
+                <span>Coût matière par pièce : <span class="badge-cout">${formatPeso(unitaire)}</span></span>
+            </div>`;
+    }
+
+    function basculer(pIdx) {
+        ouverts.has(pIdx) ? ouverts.delete(pIdx) : ouverts.add(pIdx);
+        afficherFiches();
+    }
+
+    /* ---------- Modes ---------- */
+    function definirMode(edition) {
+        modeEdition = edition;
+        document.getElementById('btnVue').setAttribute('aria-pressed', !edition);
+        document.getElementById('btnEdition').setAttribute('aria-pressed', edition);
+        document.getElementById('outilsEdition').hidden = !edition;
+        document.getElementById('avertEdition').hidden = !edition;
+        afficherFiches();
+    }
+
+    /* ---------- Modifications ---------- */
     function modifierNomProduit(pIdx, val) { fichesProduits[pIdx].nom = val; }
     function modifierNbPieces(pIdx, val) { fichesProduits[pIdx].nbPieces = val; afficherFiches(); }
     function modifierIngredNom(pIdx, iIdx, val) { fichesProduits[pIdx].ingredients[iIdx].nom = val; afficherFiches(); }
     function modifierIngredQte(pIdx, iIdx, val) { fichesProduits[pIdx].ingredients[iIdx].qte = val; afficherFiches(); }
 
     function dupliquerProduit(pIdx) {
-        const source = fichesProduits[pIdx];
-        const copie = {
-            nom: source.nom + " (Copie)",
-            nbPieces: source.nbPieces,
-            ingredients: JSON.parse(JSON.stringify(source.ingredients))
-        };
-        fichesProduits.splice(pIdx + 1, 0, copie);
+        const src = fichesProduits[pIdx];
+        // Pas de code recopié : une copie est un nouveau produit.
+        fichesProduits.splice(pIdx + 1, 0, {
+            nom: src.nom + " (Copie)",
+            nbPieces: src.nbPieces,
+            ingredients: JSON.parse(JSON.stringify(src.ingredients || []))
+        });
         afficherFiches();
     }
 
     function ajouterProduit() {
-        const premierIngred = masterIngredients.length > 0 ? masterIngredients[0].nom : "Farine de blé";
-        fichesProduits.push({ nom: "Nouveau produit", nbPieces: 1, ingredients: [{ nom: premierIngred, qte: 100 }] });
+        const premier = masterIngredients.length ? masterIngredients[0].nom : "Farine de blé";
+        fichesProduits.push({ nom: "Nouveau produit", nbPieces: 1, ingredients: [{ nom: premier, qte: 100 }] });
+        ouverts.add(fichesProduits.length - 1);
         afficherFiches();
     }
 
     function supprimerProduit(pIdx) {
-        if (confirm("Supprimer ce produit ?")) {
-            fichesProduits.splice(pIdx, 1);
-            afficherFiches();
-        }
+        if (!confirm("Supprimer « " + (fichesProduits[pIdx].nom || '') + " » ?")) return;
+        fichesProduits.splice(pIdx, 1);
+        ouverts.clear();
+        afficherFiches();
     }
 
     function ajouterIngred(pIdx) {
-        const premierIngred = masterIngredients.length > 0 ? masterIngredients[0].nom : "Farine de blé";
-        fichesProduits[pIdx].ingredients.push({ nom: premierIngred, qte: 0 });
+        const premier = masterIngredients.length ? masterIngredients[0].nom : "Farine de blé";
+        fichesProduits[pIdx].ingredients.push({ nom: premier, qte: 0 });
         afficherFiches();
     }
 
@@ -215,16 +280,16 @@ body {
         afficherFiches();
     }
 
+    /* ---------- Enregistrement ---------- */
     async function sauvegarderCloud() {
         try {
-            // On relit la version du serveur : la copie en mémoire peut être
-            // périmée (page restée ouverte, passage hors-ligne), et l'écrire
-            // telle quelle effacerait les champs ajoutés entre-temps.
+            // La copie en mémoire peut être périmée (page restée ouverte, passage
+            // hors-ligne). On relit le serveur et on ne remplace que ce que cette
+            // page gère : tout autre champ, dont le code produit, est préservé.
             const snap = await db.collection("recettes").doc("fiches").get({ source: "server" });
             const distants = (snap.exists && snap.data().items) ? snap.data().items : [];
 
-            const parId  = {};
-            const parNom = {};
+            const parId = {}, parNom = {};
             distants.forEach(d => {
                 if (d.id) parId[d.id] = d;
                 if (d.nom) parNom[d.nom.trim().toLowerCase()] = d;
@@ -234,29 +299,73 @@ body {
                 const distant = (local.id && parId[local.id])
                     || (local.nom && parNom[local.nom.trim().toLowerCase()])
                     || {};
-                // Les champs que cette page ne gère pas (id, et tout ce qui
-                // viendra plus tard) sont repris du serveur.
-                return Object.assign({}, distant, local, {
-                    id: local.id || distant.id || undefined
-                });
-            }).map(o => {
-                if (o.id === undefined) delete o.id;
-                return o;
+                const fusion = Object.assign({}, distant, local);
+                const code = local.id || distant.id;
+                if (code) fusion.id = code; else delete fusion.id;
+                return fusion;
             });
 
-            const perdus = distants.filter(d => d.id &&
-                !aEcrire.some(o => o.id === d.id)).length;
+            const perdus = distants.filter(d => d.id && !aEcrire.some(o => o.id === d.id)).length;
             if (perdus && !confirm(perdus + " fiche(s) présente(s) sur le serveur ne figurent pas ici et seront supprimées.\n\nContinuer ?")) return;
 
             await db.collection("recettes").doc("fiches").set({ items: aEcrire });
             fichesProduits = aEcrire;
+            afficherFiches();
             alert("Recettes enregistrées et synchronisées !");
         } catch (err) {
             alert("Erreur d'enregistrement : " + err.message);
         }
     }
 
-    window.addEventListener('DOMContentLoaded', initialiserEcouteurs);
+    /* ---------- Export Excel ---------- */
+    function exporterExcel() {
+        const lignes = [];
+        fichesProduits.forEach(prod => {
+            const total = coutRecette(prod);
+            const unitaire = prod.nbPieces > 0 ? total / prod.nbPieces : 0;
+            (prod.ingredients || []).forEach(ing => {
+                const info = masterIngredients.find(m => m.nom.toLowerCase() === ing.nom.toLowerCase());
+                const prix = info ? info.prix : 0;
+                const type = info ? info.type : 'kg';
+                lignes.push({
+                    Code: prod.id || '',
+                    Produit: prod.nom || '',
+                    Pieces: prod.nbPieces || 1,
+                    Ingredient: ing.nom,
+                    Quantite: ing.qte,
+                    Unite: type === 'kg' ? 'g' : 'u.',
+                    "Prix ingredient": prix,
+                    "Cout ligne": Number((type === 'kg' ? (ing.qte / 1000) * prix : ing.qte * prix).toFixed(4)),
+                    "Cout recette": Number(total.toFixed(2)),
+                    "Cout par piece": Number(unitaire.toFixed(4))
+                });
+            });
+        });
+
+        const feuille = XLSX.utils.json_to_sheet(lignes);
+        const classeur = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(classeur, feuille, "Prix de revient");
+        XLSX.writeFile(classeur, "prix-de-revient-" + new Date().toISOString().slice(0, 10) + ".xlsx");
+    }
+
+    /* ---------- Branchements ---------- */
+    window.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('btnVue').onclick = () => definirMode(false);
+        document.getElementById('btnEdition').onclick = () => definirMode(true);
+        document.getElementById('btnAjouter').onclick = ajouterProduit;
+        document.getElementById('btnEnregistrer').onclick = sauvegarderCloud;
+        document.getElementById('btnExport').onclick = exporterExcel;
+        document.getElementById('btnPlier').onclick = () => {
+            if (ouverts.size) ouverts.clear();
+            else fichesProduits.forEach((_, i) => ouverts.add(i));
+            afficherFiches();
+        };
+        initialiserEcouteurs();
+    });
+
+    window.addEventListener('beforeunload', (e) => {
+        if (modeEdition) { e.preventDefault(); e.returnValue = ''; }
+    });
 </script>
 
 </body>
