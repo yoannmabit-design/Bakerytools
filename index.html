@@ -229,7 +229,7 @@
 
       <div class="carte" style="max-width:900px;">
         <div style="display:flex; justify-content:space-around; text-align:center; flex-wrap:wrap; gap:10px;">
-          <div><div style="font-size:1.6rem; font-weight:bold; color:#7a4a1f;" id="dashTotalPieces">0</div><div style="font-size:0.8rem; color:#6b5b45;">Pièces commandées</div></div>
+          <div><div style="font-size:1.6rem; font-weight:bold; color:#7a4a1f;" id="dashTotalPieces">0</div><div style="font-size:0.8rem; color:#6b5b45;">Articles commandés</div></div>
           <div><div style="font-size:1.6rem; font-weight:bold; color:#7a4a1f;" id="dashTauxMarge">0%</div><div style="font-size:0.8rem; color:#6b5b45;">Taux de marge</div></div>
           <div><div style="font-size:1.6rem; font-weight:bold; color:#7a4a1f;" id="dashNbProduits">0</div><div style="font-size:0.8rem; color:#6b5b45;">Produits actifs</div></div>
         </div>
@@ -514,7 +514,7 @@
       </div>
 
       <div class="footer-total">
-        <span>TOTAL PIÈCES</span>
+        <span>TOTAL ARTICLES</span>
         <div>
           <span class="footer-total-val" id="totalPiecesCommandes">0</span>
           <span style="font-size:0.7rem; color:#cbd5e1; display:block; text-align:right;" id="totalCoutCommandes">Matière: ₱ 0,00</span>
@@ -961,8 +961,15 @@
         const rappel = document.getElementById('rappelBoutique');
         if (rappel) {
             const totalBout = Object.values(commandesBoutique).reduce((a, b) => a + b, 0);
-            rappel.textContent = dateBoutique
-                ? `🛒 Livraison du ${dateBoutique} — ${totalBout} pièce(s) commandée(s) en ligne`
+            // Un code commandé qu'aucune fiche vendable ne reconnaît serait perdu
+            // silencieusement dans les totaux : on le signale.
+            const orphelins = Object.keys(commandesBoutique).filter(k =>
+                !produitsVendables().some(f => f.id === k ||
+                    cleNom(f.nom) === cleNom(nomsBoutique[k] || k)));
+            rappel.innerHTML = dateBoutique
+                ? `🛒 Livraison du ${dateBoutique} — ${totalBout} article(s) commandé(s) en ligne` +
+                  (orphelins.length ? `<br><span style="color:#c0392b; font-weight:bold;">⚠️ Non rattaché(s) à une fiche : ${
+                      orphelins.map(k => (nomsBoutique[k] || k) + ' (' + k + ')').join(', ')}</span>` : '')
                 : "🛒 Aucune commande en ligne pour la prochaine livraison";
         }
     }
