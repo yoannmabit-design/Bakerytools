@@ -264,14 +264,16 @@
       <p class="sous-titre">Basé sur les fiches techniques de catégorie "Pains" (onglet Coûts). Indique les quantités à produire.</p>
 
       <div class="carte">
-        <h2 style="color:#7a4a1f; margin-bottom:10px; font-size:1.1rem;">📋 Quantités à produire</h2>
+        <h2 style="color:#7a4a1f; margin-bottom:10px; font-size:1.1rem;">🛒 Commandes boutique</h2>
+        <p class="sous-titre" id="sousTitreBoutique">Commandes clients de la prochaine livraison — lecture seule.</p>
         <div class="grille-quantites" id="grilleQuantitesPains"></div>
       </div>
 
       <div class="carte carte-tardive">
-        <h2 style="margin-bottom:10px; font-size:1.1rem;">➕ Commande tardive</h2>
+        <h2 style="margin-bottom:10px; font-size:1.1rem;">➕ Ajouts</h2>
+        <p class="sous-titre">Ce que vous produisez en plus des commandes en ligne.</p>
         <div class="grille-quantites" id="grilleQuantitesTardif"></div>
-        <button class="btn" style="background:none; border:1px solid #b05a2f; color:#b05a2f;" onclick="reinitialiserTardif()">Réinitialiser commande tardive</button>
+        <button class="btn" style="background:none; border:1px solid #b05a2f; color:#b05a2f;" onclick="reinitialiserTardif()">Réinitialiser les ajouts</button>
       </div>
 
       <div class="carte" id="syntheseBasesWrapper">
@@ -1798,22 +1800,30 @@
         } else {
             grille.innerHTML = '';
             fiches.forEach(f => {
-                const val = quantitesCommandes[f.nom] || 0;
+                const val = qteBoutique(f);
                 const div = document.createElement('div');
                 div.className = 'champ-qte';
-                div.innerHTML = `<label>${f.nom}</label><input type="number" min="0" step="1" value="${val}" onchange="modifierQtePain('${f.nom.replace(/'/g, "\\'")}', parseFloat(this.value)||0)">`;
+                div.innerHTML = `<label>${f.nom}</label>
+                    <div style="text-align:center; font-size:1.4em; font-weight:bold; padding:8px;
+                                background:${val > 0 ? '#e8f0f4' : '#f5f0e6'};
+                                color:${val > 0 ? '#2f4858' : '#a89a86'};
+                                border-radius:6px;">${val}</div>`;
                 grille.appendChild(div);
             });
+            const st = document.getElementById('sousTitreBoutique');
+            if (st) st.textContent = dateBoutique
+                ? 'Commandes clients pour la livraison du ' + dateBoutique + ' — lecture seule.'
+                : 'Aucune commande en ligne pour la prochaine livraison.';
         }
 
         // --- Grille des quantités tardives ---
         const grilleT = document.getElementById('grilleQuantitesTardif');
         grilleT.innerHTML = '';
         fiches.forEach(f => {
-            const val = quantitesTardif[f.nom] || 0;
+            const val = quantitesCommandes[f.nom] || 0;
             const div = document.createElement('div');
             div.className = 'champ-qte';
-            div.innerHTML = `<label>${f.nom}</label><input type="number" min="0" step="1" value="${val}" onchange="modifierQteTardif('${f.nom.replace(/'/g, "\\'")}', parseFloat(this.value)||0)">`;
+            div.innerHTML = `<label>${f.nom}</label><input type="number" min="0" step="1" value="${val}" onchange="modifierQtePain('${f.nom.replace(/'/g, "\\'")}', parseFloat(this.value)||0)">`;
             grilleT.appendChild(div);
         });
 
@@ -1858,7 +1868,8 @@
         if (typeof afficherCommandes === 'function') afficherCommandes();
     }
     function reinitialiserTardif() {
-        quantitesTardif = {};
+        if (!confirm("Remettre tous les ajouts à zéro ?")) return;
+        quantitesCommandes = {};
         sauvegarderCommandesCloud();
         afficherRecettesPains();
         if (typeof afficherCommandes === 'function') afficherCommandes();
@@ -1869,8 +1880,8 @@
         const div = document.createElement('div');
         div.className = 'carte';
 
-        const qte = qteBoutique(fiche) + (quantitesCommandes[fiche.nom] || 0);
-        const qteT = quantitesTardif[fiche.nom] || 0;
+        const qte = qteBoutique(fiche);                        // commandes clients
+        const qteT = quantitesCommandes[fiche.nom] || 0;       // vos ajouts
         const facteur = fiche.nbPieces > 0 ? qte / fiche.nbPieces : 0;
         const facteurT = fiche.nbPieces > 0 ? qteT / fiche.nbPieces : 0;
 
@@ -1899,10 +1910,10 @@
                 <tbody>${lignes}</tbody>
             </table>
             <div class="info-hydratation">💧 Taux d'hydratation : ${hydratation.toFixed(1).replace('.', ',')}%</div>
-            <div class="info-nb">Quantité commandée : ${qte} pièce(s)</div>
+            <div class="info-nb">Commandes boutique : ${qte} · Ajouts : ${qteT} · <strong>Total : ${qte + qteT}</strong></div>
             ${qteT > 0 ? `
                 <div class="supplement-tardif">
-                    <h3>➕ Supplément commande tardive (${qteT} pièce(s))</h3>
+                    <h3>➕ Supplément pour vos ajouts (${qteT} pièce(s))</h3>
                     <table>
                         <thead><tr><th>Ingrédient</th><th>Quantité supplémentaire</th></tr></thead>
                         <tbody>${lignesTardif}</tbody>
@@ -1939,8 +1950,8 @@
         const basesNormal = {}, basesTardif = {};
 
         fichesPainsListe.forEach(f => {
-            const qte = qteBoutique(f) + (quantitesCommandes[f.nom] || 0);
-            const qteT = quantitesTardif[f.nom] || 0;
+            const qte = qteBoutique(f);
+            const qteT = quantitesCommandes[f.nom] || 0;
             const facteur = f.nbPieces > 0 ? qte / f.nbPieces : 0;
             const facteurT = f.nbPieces > 0 ? qteT / f.nbPieces : 0;
 
@@ -1981,7 +1992,7 @@
                         <span style="font-size:1.5rem;">🌾 ${nomBase}</span>
                         <span style="font-size:1.5rem;">${totalGlobal.toLocaleString('fr-FR')} g</span>
                     </div>
-                    ${totalTardif > 0 ? `<div style="color:#ffd8c2; font-size:0.95rem; margin-top:2px;">dont ${totalTardif} g tardif</div>` : ''}
+                    ${totalTardif > 0 ? `<div style="color:#ffd8c2; font-size:0.95rem; margin-top:2px;">dont ${totalTardif} g d'ajouts</div>` : ''}
                 `;
                 conteneur.appendChild(bloc);
                 return;
@@ -2016,7 +2027,7 @@
             bloc.innerHTML = `
                 <div style="display:flex; justify-content:space-between; font-weight:bold;">
                     <span>${nomBase}</span>
-                    <span>${totalGlobal.toLocaleString('fr-FR')} g ${totalTardif > 0 ? `(dont ${totalTardif} g tardif)` : ''}</span>
+                    <span>${totalGlobal.toLocaleString('fr-FR')} g ${totalTardif > 0 ? `(dont ${totalTardif} g d'ajouts)` : ''}</span>
                 </div>
                 ${detailHTML}
             `;
