@@ -977,6 +977,7 @@
                     cleNom(f.nom) === cleNom(nomsBoutique[k] || k)));
             rappel.innerHTML = dateBoutique
                 ? `🛒 Livraison du ${dateBoutique} — ${totalBout} article(s) commandé(s) en ligne` +
+                  (nbAbonnements ? ` <span style="color:#2f4858;">· dont ${nbAbonnements} abonnement(s)</span>` : '') +
                   (orphelins.length ? `<br><span style="color:#c0392b; font-weight:bold;">⚠️ Non rattaché(s) à une fiche : ${
                       orphelins.map(k => (nomsBoutique[k] || k) + ' (' + k + ')').join(', ')}</span>` : '')
                 : "🛒 Aucune commande en ligne pour la prochaine livraison";
@@ -2191,6 +2192,7 @@
     let quantitesCommandes = {};   // ajouts manuels (hors-site)
     let commandesBoutique = {};    // { code produit : quantité } — venant de la boutique
     let nomsBoutique = {};         // { clé publiée : nom du produit } — rattrapage par le nom
+    let nbAbonnements = 0;         // abonnements dont une échéance tombe ce jour-là
     let dateBoutique = '';         // date de livraison couverte par ces commandes
     let prixVenteCommandes = {};
     let stockProduits = {}; // { nomFiche: quantité en stock (produits finis) }
@@ -2237,6 +2239,7 @@
                 commandesBoutique = d.totaux || {};
                 nomsBoutique = d.noms || {};
                 dateBoutique = d.date || '';
+                nbAbonnements = d.nb_abonnements || 0;
             } else {
                 commandesBoutique = {}; nomsBoutique = {}; dateBoutique = '';
             }
