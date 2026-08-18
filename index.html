@@ -2195,6 +2195,11 @@
     let nbAbonnements = 0;         // abonnements dont une échéance tombe ce jour-là
     let dateBoutique = '';         // date de livraison couverte par ces commandes
     let prixVenteCommandes = {};
+    // Prix de vente publiés par la boutique, par code produit. C'est la
+    // boutique qui décide du prix : le client le paie, elle fait foi.
+    // L'ERP ne conserve une saisie manuelle que pour les produits qu'elle
+    // ne vend pas en ligne.
+    let prixBoutique = {};
     let stockProduits = {}; // { nomFiche: quantité en stock (produits finis) }
     let triCommandes = 'az';
     let financeOuvert = false;
@@ -2228,6 +2233,32 @@
 
     function produitsVendables() {
         return fichesTechniques.filter(f => f.vendable);
+    }
+
+    // Prix de vente du catalogue boutique, suivis en temps réel.
+    function chargerPrixBoutique() {
+        if (!db) return;
+        db.collection("boutique_produits").onSnapshot((snap) => {
+            prixBoutique = {};
+            snap.forEach((d) => {
+                const v = d.data();
+                if (v && v.publie !== false && typeof v.prix_vente === 'number') {
+                    prixBoutique[d.id] = v.prix_vente;
+                }
+            });
+            afficherCommandes();
+            if (typeof afficherRecettesPains === 'function') afficherRecettesPains();
+        }, (err) => console.log("Prix boutique : " + err.message));
+    }
+
+    /* Prix de vente d'une fiche : celui de la boutique s'il existe, sinon la
+       saisie manuelle de l'ERP — pour un produit vendu au marché mais absent
+       de la boutique en ligne. */
+    function prixVenteFiche(fiche) {
+        if (fiche.id && prixBoutique[fiche.id] !== undefined) {
+            return { valeur: prixBoutique[fiche.id], source: 'boutique' };
+        }
+        return { valeur: prixVenteCommandes[fiche.nom] || 0, source: 'erp' };
     }
 
     // Commandes clients de la prochaine livraison, publiées par le tableau de bord boutique.
@@ -2289,7 +2320,8 @@
             const qteTardif = quantitesTardif[prod.nom] || 0;
             const qteBout = qteBoutique(prod);
             const qte = qteBout + qteBase + qteTardif; // boutique + ajouts manuels + tardif
-            const prixVente = prixVenteCommandes[prod.nom] || 0;
+            const infoPrix = prixVenteFiche(prod);
+            const prixVente = infoPrix.valeur;
             const coutUnitaire = calculerCoutFiche(prod).coutUnitaire;
 
             totalPcs += qte;
@@ -2316,11 +2348,19 @@
                 </div>
             `;
 
+            // Marge unitaire : c'est elle qu'on regarde quand on ajuste un prix.
+            const margeU = prixVente - coutUnitaire;
+            const tauxU = prixVente > 0 ? (margeU / prixVente) * 100 : 0;
+
             lignesPrixVente += `
                 <div class="ligne-prix-vente">
                     <span>${prod.nom}</span>
                     <span>Revient: ${formatPeso(coutUnitaire)}</span>
-                    <span>Vente: ₱ <input type="number" class="price-input-cmd" value="${prixVente}" step="0.5" onchange="changerPrixVenteCommande('${prod.nom.replace(/'/g, "\\'")}', parseFloat(this.value)||0)"></span>
+                    <span>Vente: ₱ ${infoPrix.source === 'boutique'
+                        ? `<b>${prixVente}</b> <span title="Prix défini dans la boutique en ligne — modifiez-le là-bas." style="background:#e8f0f4; color:#2f4858; padding:1px 6px; border-radius:4px; font-size:0.75em;">boutique</span>`
+                        : `<input type="number" class="price-input-cmd" value="${prixVente}" step="0.5" onchange="changerPrixVenteCommande('${prod.nom.replace(/'/g, "\\'")}', parseFloat(this.value)||0)">`}</span>
+                    <span style="color:${margeU < 0 ? '#a8322a' : '#5f7a52'}; font-weight:bold;">
+                        Marge: ${formatPeso(margeU)}${prixVente > 0 ? ` · ${tauxU.toFixed(0)} %` : ''}</span>
                 </div>
             `;
             conteneur.appendChild(card);
@@ -2455,7 +2495,9 @@
         let totalCAJour = 0, totalCoutJour = 0, totalPiecesJour = 0;
         const detailProduits = produits.map(f => {
             const qte = qteBoutique(f) + (quantitesCommandes[f.nom] || 0) + (quantitesTardif[f.nom] || 0);
-            const prixVente = prixVenteCommandes[f.nom] || 0;
+            // Même source de prix que l'affichage : sinon l'historique
+            // enregistrerait un chiffre d'affaires que personne n'a vu.
+            const prixVente = prixVenteFiche(f).valeur;
             const coutUnitaire = calculerCoutFiche(f).coutUnitaire;
             totalCAJour += prixVente * qte;
             totalCoutJour += coutUnitaire * qte;
@@ -2524,6 +2566,7 @@
         chargerFiches();
         chargerCommandes();
         chargerCommandesBoutique();
+        chargerPrixBoutique();
         chargerPrefsSansGluten();
         calculerSansGluten();
         chargerHistorique();
