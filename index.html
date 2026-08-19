@@ -215,8 +215,8 @@
       <h1>🏠 Tableau de Bord</h1>
       <p class="sous-titre">Résumé du jour — mis à jour en temps réel.</p>
 
-      <div class="carte" style="max-width:900px; max-height:33vh; overflow-y:auto;">
-        <h2 style="color:#7a4a1f; margin-bottom:10px; font-size:1.1rem;">📋 Résumé des commandes</h2>
+      <div class="carte" style="max-width:900px; border-left:5px solid #b35c00;">
+        <h2 style="color:#7a4a1f; margin-bottom:10px; font-size:1.2rem;">📋 Résumé des commandes</h2>
         <div id="rappelBoutique" style="font-size:0.85rem; color:#2f4858; background:#e8f0f4; padding:6px 10px; border-radius:6px; margin-bottom:8px;"></div>
         <div id="resumeCommandes"></div>
       </div>
@@ -959,9 +959,9 @@
             const items = parCategorie[cat];
             if (!items || items.length === 0) return;
             items.sort((a, b) => a.nom.localeCompare(b.nom));
-            html += `<div style="margin-bottom:10px;">
-                <div style="font-weight:bold; color:#7a4a1f; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">${cat}</div>
-                ${items.map(i => `<div style="display:flex; justify-content:space-between; padding:3px 0; border-bottom:1px solid #f0e6d2; font-size:0.95rem;"><span>${i.nom}${i.qteB > 0 ? ` <span style="color:#2f4858; font-size:0.8em;">(dont ${i.qteB} en ligne)</span>` : ''}</span><span style="font-weight:bold; color:#7a4a1f;">${i.qte}</span></div>`).join('')}
+            html += `<div style="margin-bottom:14px;">
+                <div style="font-weight:bold; color:#7a4a1f; font-size:0.95rem; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">${cat}</div>
+                ${items.map(i => `<div style="display:flex; justify-content:space-between; align-items:baseline; padding:6px 0; border-bottom:1px solid #f0e6d2; font-size:1.1rem;"><span>${i.nom}${i.qteB > 0 ? ` <span style="color:#2f4858; font-size:0.75em;">(dont ${i.qteB} en ligne)</span>` : ''}</span><span style="font-weight:bold; color:#7a4a1f; font-size:1.35rem; font-variant-numeric:tabular-nums;">${i.qte}</span></div>`).join('')}
             </div>`;
         });
 
