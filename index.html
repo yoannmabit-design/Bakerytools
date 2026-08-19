@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+   <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -266,7 +266,7 @@
       <h1>🍞 Recettes — Production du Jour</h1>
       <p class="sous-titre">Basé sur les fiches techniques de catégorie "Pains" (onglet Coûts). Indique les quantités à produire.</p>
 
-      <div class="carte">
+      <div class="carte" style="border-left:5px solid #c9a227;">
         <h2 style="color:#7a4a1f; margin-bottom:10px; font-size:1.1rem;">🛒 Commandes boutique</h2>
         <p class="sous-titre" id="sousTitreBoutique">Commandes clients de la prochaine livraison — lecture seule.</p>
         <div class="grille-quantites" id="grilleQuantitesPains"></div>
@@ -280,22 +280,12 @@
         <h2 style="margin-bottom:10px; font-size:1.1rem;">➕ Ajouts</h2>
         <p class="sous-titre">Ce que vous produisez en plus des commandes en ligne.</p>
         <div class="grille-quantites" id="grilleQuantitesTardif"></div>
-
-        <!-- Saisie directe sur les Recettes de Base : une pâte fermentée ou un
-             levain préparés d'avance ne correspondent à aucun pain commandé.
-             La saisie est en grammes, comme la Synthèse ci-dessous. -->
-        <div style="margin-top:16px; padding-top:14px; border-top:1px dashed #b05a2f;">
-          <h3 style="color:#b05a2f; font-size:1rem; margin-bottom:4px;">🫙 Recettes de base (en grammes)</h3>
-          <p class="sous-titre">Quantités préparées d'avance, en plus de ce que les pains réclament.</p>
-          <div class="grille-quantites" id="grilleAjoutsBases"></div>
-        </div>
-
         <button class="btn" style="background:none; border:1px solid #b05a2f; color:#b05a2f;" onclick="reinitialiserAjouts()">Réinitialiser les ajouts</button>
       </div>
 
       <div class="carte" id="syntheseBasesWrapper">
         <h2 style="color:#7a4a1f; margin-bottom:10px; font-size:1.1rem;">🫙 Synthèse des Recettes de Base</h2>
-        <p class="sous-titre">Quantités totales à préparer — ce que les pains réclament, plus vos ajouts directs.</p>
+        <p class="sous-titre">Quantités totales à préparer, suppléments compris.</p>
         <div id="syntheseBases"></div>
       </div>
 
@@ -1800,17 +1790,12 @@
     let quantitesTardif = {};
     /* Ajouts saisis directement sur une Recette de Base, en grammes : une pâte
        fermentée préparée d'avance ne correspond à aucun pain commandé. */
-    let ajoutsBases = {};      // { nomBase: grammes }
     /* Pesées figées. Tant que c'est null, tout ce qui est commandé forme une
        seule pesée à faire. Une fois figé, ce qui arrive ensuite — commande
        boutique tardive ou ajout de la main — devient un supplément à peser
        séparément, parce que la balance est déjà passée. */
-    let pesees = null;         // { horodatage, quantites: {nomPain: qte}, bases: {nomBase: g} }
+    let pesees = null;         // { horodatage, quantites: {nomPain: qte} }
     let ongletActifPains = null;
-
-    function fichesBases() {
-        return fichesTechniques.filter(f => !f.vendable);
-    }
 
     // Ce que réclame la journée à cet instant : commandes en ligne + vos ajouts.
     function totalPainActuel(fiche) {
@@ -1832,8 +1817,7 @@
         fichesPains().forEach(f => { quantites[f.nom] = totalPainActuel(f); });
         pesees = {
             horodatage: new Date().toISOString(),
-            quantites: quantites,
-            bases: Object.assign({}, ajoutsBases)
+            quantites: quantites
         };
         sauvegarderCommandesCloud();
         afficherRecettesPains();
@@ -1867,15 +1851,13 @@
 
         const heure = new Date(pesees.horodatage).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
         const suppPains = fichesPains().reduce((t, f) => t + qteSupplement(f), 0);
-        const suppBases = fichesBases().reduce((t, f) =>
-            t + Math.max(0, (ajoutsBases[f.nom] || 0) - ((pesees.bases || {})[f.nom] || 0)), 0);
-        const aFaire = suppPains > 0 || suppBases > 0;
+        const aFaire = suppPains > 0;
         poser(aFaire ? '#c0392b' : '#2e7d32');
 
         el.innerHTML = `
             <h2 style="color:${aFaire ? '#c0392b' : '#2e7d32'}; margin-bottom:4px; font-size:1.1rem;">⚖️ Pesées faites à ${heure}</h2>
             <p class="sous-titre">${aFaire
-                ? `<strong style="color:#b05a2f;">${suppPains} pièce(s)${suppBases > 0 ? ` et ${Math.ceil(suppBases).toLocaleString('fr-FR')} g de base` : ''} sont arrivées depuis</strong> — voir les suppléments dans chaque onglet.`
+                ? `<strong style="color:#b05a2f;">${suppPains} pièce(s) sont arrivées depuis</strong> — voir les suppléments dans chaque onglet.`
                 : "Rien n'est arrivé depuis. Les suppléments s'afficheront ici automatiquement."}</p>
             <button class="btn" style="background:none; border:1px solid #b05a2f; color:#b05a2f;" onclick="annulerPesees()">Reprendre les pesées</button>`;
     }
@@ -1950,24 +1932,6 @@
             grilleT.appendChild(div);
         });
 
-        // --- Grille des ajouts directs sur les Recettes de Base, en grammes ---
-        const grilleBases = document.getElementById('grilleAjoutsBases');
-        if (grilleBases) {
-            const bases = fichesBases();
-            grilleBases.innerHTML = '';
-            if (bases.length === 0) {
-                grilleBases.innerHTML = '<p style="color:#8a7860; font-size:0.85em;">Aucune Recette de Base pour l\'instant — décoche "Vendable" sur une fiche dans l\'onglet Coûts.</p>';
-            } else {
-                bases.forEach(f => {
-                    const val = ajoutsBases[f.nom] || 0;
-                    const div = document.createElement('div');
-                    div.className = 'champ-qte';
-                    div.innerHTML = `<label>${f.nom} <span style="font-weight:normal; color:#8a7860;">(g)</span></label><input type="number" min="0" step="50" value="${val}" onchange="modifierAjoutBase('${f.nom.replace(/'/g, "\\'")}', parseFloat(this.value)||0)">`;
-                    grilleBases.appendChild(div);
-                });
-            }
-        }
-
         // --- Onglets par pain ---
         const conteneurOnglets = document.getElementById('ongletsPains');
         conteneurOnglets.innerHTML = '';
@@ -2003,16 +1967,9 @@
         if (typeof afficherCommandes === 'function') afficherCommandes();
     }
 
-    function modifierAjoutBase(nom, val) {
-        ajoutsBases[nom] = Math.max(0, val);
-        sauvegarderCommandesCloud();
-        afficherRecettesPains();
-    }
-
     function reinitialiserAjouts() {
-        if (!confirm("Remettre tous les ajouts à zéro, y compris les recettes de base ?")) return;
+        if (!confirm("Remettre tous les ajouts à zéro ?")) return;
         quantitesCommandes = {};
-        ajoutsBases = {};
         sauvegarderCommandesCloud();
         afficherRecettesPains();
         if (typeof afficherCommandes === 'function') afficherCommandes();
@@ -2105,27 +2062,6 @@
             const facteurS = f.nbPieces > 0 ? qteS / f.nbPieces : 0;
             if (facteur > 0)  accumulerBasesRecursif(f, facteur,  basesNormal, new Set());
             if (facteurS > 0) accumulerBasesRecursif(f, facteurS, basesAjout,  new Set());
-        });
-
-        /* Ajouts saisis directement sur une base. Ils se propagent à leurs
-           propres sous-recettes : 2 kg de pâte fermentée réclament le levain
-           qu'elle contient, sinon il manquerait au moment de pétrir. */
-        const empilerBase = (nomBase, grammes, cible) => {
-            if (grammes <= 0) return;
-            cible[nomBase] = (cible[nomBase] || 0) + grammes;
-            const fiche = fichesTechniques.find(f => f.nom === nomBase);
-            if (!fiche) return;
-            const poidsTotal = (fiche.ingredients || []).reduce((acc, i) => acc + (i.qte || 0), 0);
-            if (poidsTotal > 0) {
-                accumulerBasesRecursif(fiche, grammes / poidsTotal, cible, new Set());
-            }
-        };
-
-        Object.keys(ajoutsBases).forEach(nomBase => {
-            const total = ajoutsBases[nomBase] || 0;
-            const dejaPesee = pesees ? ((pesees.bases || {})[nomBase] || 0) : total;
-            empilerBase(nomBase, Math.min(total, dejaPesee), basesNormal);
-            empilerBase(nomBase, Math.max(0, total - dejaPesee), basesAjout);
         });
 
         const conteneur = document.getElementById('syntheseBases');
@@ -2354,7 +2290,6 @@
                 prixVenteCommandes = data.prices || {};
                 // Le champ "tardif" n'est plus lu : la saisie a disparu de l'écran.
                 quantitesTardif = {};
-                ajoutsBases = data.ajoutsBases || {};
                 pesees = data.pesees || null;
                 stockProduits = data.stockProduits || {};
                 document.getElementById('statusBarCommandes').textContent = "✅ Synchronisé en temps réel avec le Cloud Firebase";
@@ -2583,8 +2518,7 @@
 
     function confirmerProductionDuJour() {
         const produits = produitsVendables().filter(f => qteBoutique(f) + (quantitesCommandes[f.nom] || 0) > 0);
-        const basesAjoutees = Object.keys(ajoutsBases).filter(nom => (ajoutsBases[nom] || 0) > 0);
-        if (produits.length === 0 && basesAjoutees.length === 0) {
+        if (produits.length === 0) {
             alert("Aucune quantité renseignée en Commandes pour l'instant — rien à confirmer.");
             return;
         }
@@ -2595,17 +2529,6 @@
             if (f.nbPieces > 0) {
                 const facteur = qte / f.nbPieces;
                 accumulerConsommationBrute(f, facteur, accumulateur, new Set());
-            }
-        });
-
-        /* Les bases préparées d'avance consomment aussi : leur farine sort du
-           sac le jour où on les fabrique, pas le jour où on les emploie. */
-        basesAjoutees.forEach(nomBase => {
-            const fiche = fichesTechniques.find(f => f.nom === nomBase);
-            if (!fiche) return;
-            const poidsTotal = (fiche.ingredients || []).reduce((acc, i) => acc + (i.qte || 0), 0);
-            if (poidsTotal > 0) {
-                accumulerConsommationBrute(fiche, ajoutsBases[nomBase] / poidsTotal, accumulateur, new Set());
             }
         });
 
@@ -2670,7 +2593,6 @@
         // Chaque quantité ne vaut que pour la livraison qui vient : on repart de zéro.
         quantitesCommandes = {};
         quantitesTardif = {};
-        ajoutsBases = {};
         pesees = null;
 
         afficherTableauIngredients();
@@ -2700,7 +2622,6 @@
             values: quantitesCommandes,
             prices: prixVenteCommandes,
             tardif: {},
-            ajoutsBases: ajoutsBases,
             pesees: pesees,
             stockProduits: stockProduits
         }).catch((err) => console.log("Erreur de sauvegarde : " + err.message));
