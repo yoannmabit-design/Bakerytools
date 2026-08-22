@@ -1942,7 +1942,7 @@
             const val = quantitesCommandes[f.nom] || 0;
             const div = document.createElement('div');
             div.className = 'champ-qte';
-            div.innerHTML = `<label>${f.nom}</label><input type="number" min="0" step="1" value="${val}" ${pesees ? 'disabled' : ''} onchange="modifierQtePain('${f.nom.replace(/'/g, "\\'")}', parseFloat(this.value)||0)">`;
+            div.innerHTML = `<label>${f.nom}</label><input type="number" step="1" value="${val}" ${pesees ? 'disabled' : ''} onchange="modifierQtePain('${f.nom.replace(/'/g, "\\'")}', parseFloat(this.value)||0)">`;
             grilleA.appendChild(div);
         });
         const btnReset = document.getElementById('btnReinitialiserAjouts');
@@ -1989,8 +1989,9 @@
     }
 
     // Modifie la quantité "normale" : écrit directement dans quantitesCommandes (partagé avec l'onglet Commandes).
+    // Pas de plancher à 0, pour la même raison que changerQteCommande.
     function modifierQtePain(nom, val) {
-        quantitesCommandes[nom] = Math.max(0, val);
+        quantitesCommandes[nom] = val;
         sauvegarderCommandesCloud();
         afficherRecettesPains();
         if (typeof afficherCommandes === 'function') afficherCommandes();
@@ -2391,15 +2392,37 @@
             .toLowerCase().replace(/[^a-z0-9]/g, '');
     }
 
-    // Quantité issue de la boutique : d'abord par code produit, sinon par nom
-    // (utile tant que la boutique publie encore sous ses anciens identifiants).
-    function qteBoutique(fiche) {
-        if (fiche.id && commandesBoutique[fiche.id]) return commandesBoutique[fiche.id];
-        const cible = cleNom(fiche.nom);
+    // Quantité boutique d'un seul code/nom produit — sans la fusion, pour
+    // pouvoir la réutiliser aussi bien sur une fiche que sur un code fusionné.
+    function qteBoutiqueFiche(id, nom) {
+        if (id && commandesBoutique[id]) return commandesBoutique[id];
+        const cible = cleNom(nom);
         for (const k in commandesBoutique) {
             if (cleNom(nomsBoutique[k] || k) === cible) return commandesBoutique[k];
         }
         return 0;
+    }
+
+    /* Produits dont les commandes doivent se confondre avec une autre fiche —
+       même recette, juste un format différent (ex : Déjeunette = même pâte
+       que Sourdough Baguette, façonnée autrement). Pas de fiche ni d'onglet
+       séparé pour eux : leurs commandes s'ajoutent simplement à la fiche
+       visée. Clé = code produit boutique ; valeur = nom EXACT de la fiche
+       technique visée — "Sourdough Baguette" est une hypothèse reprise de
+       notre échange, à corriger ici si le vrai nom de la fiche diffère. */
+    const PRODUITS_FUSIONNES = {
+        'SOU-DEJ': 'Sourdough Baguette'
+    };
+
+    // Quantité issue de la boutique : d'abord par code produit, sinon par nom
+    // (utile tant que la boutique publie encore sous ses anciens identifiants),
+    // plus tout ce qui est fusionné dans cette fiche (voir PRODUITS_FUSIONNES).
+    function qteBoutique(fiche) {
+        let total = qteBoutiqueFiche(fiche.id, fiche.nom);
+        Object.entries(PRODUITS_FUSIONNES).forEach(([code, cibleNom]) => {
+            if (cleNom(cibleNom) === cleNom(fiche.nom)) total += qteBoutiqueFiche(code, code);
+        });
+        return total;
     }
 
     function afficherCommandes() {
@@ -2455,7 +2478,7 @@
                 </div>
                 <div class="counter-group">
                     <button class="btn-counter" onclick="changerQteCommande('${prod.nom.replace(/'/g, "\\'")}', -1)">-</button>
-                    <input type="number" class="counter-value" value="${qteBase}" onchange="saisirQteCommande('${prod.nom.replace(/'/g, "\\'")}', this.value)" min="0">
+                    <input type="number" class="counter-value" value="${qteBase}" onchange="saisirQteCommande('${prod.nom.replace(/'/g, "\\'")}', this.value)">
                     <button class="btn-counter" onclick="changerQteCommande('${prod.nom.replace(/'/g, "\\'")}', 1)">+</button>
                 </div>
                 <div class="stock-produit-discret">
@@ -2506,17 +2529,18 @@
 
     function changerQteCommande(nom, delta) {
         const actuelle = quantitesCommandes[nom] || 0;
-        const nouvelle = Math.max(0, actuelle + delta);
-        const deltaReel = nouvelle - actuelle; // tient compte du plafonnement à 0
+        // Pas de plancher à 0 : une valeur négative sert à retirer un pain
+        // déjà fait avant même de passer par ici (hors commande boutique).
+        const nouvelle = actuelle + delta;
         quantitesCommandes[nom] = nouvelle;
-        stockProduits[nom] = (stockProduits[nom] || 0) - deltaReel; // une commande en plus = une pièce vendue en moins au stock
+        stockProduits[nom] = (stockProduits[nom] || 0) - delta;
         sauvegarderCommandesCloud();
         afficherCommandes();
     }
 
     function saisirQteCommande(nom, val) {
         const actuelle = quantitesCommandes[nom] || 0;
-        const nouvelle = Math.max(0, parseInt(val) || 0);
+        const nouvelle = parseInt(val) || 0;
         const deltaReel = nouvelle - actuelle;
         quantitesCommandes[nom] = nouvelle;
         stockProduits[nom] = (stockProduits[nom] || 0) - deltaReel;
