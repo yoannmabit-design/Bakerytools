@@ -276,11 +276,17 @@
         <div id="etatPesees"></div>
       </div>
 
-      <div class="carte carte-tardive">
+      <div class="carte">
         <h2 style="margin-bottom:10px; font-size:1.1rem;">➕ Ajouts</h2>
-        <p class="sous-titre">Ce que vous produisez en plus des commandes en ligne.</p>
+        <p class="sous-titre">Ce que vous produisez en plus des commandes en ligne — saisi avant la pesée. Se fige avec elle.</p>
+        <div class="grille-quantites" id="grilleQuantitesAjouts"></div>
+        <button class="btn" id="btnReinitialiserAjouts" style="background:none; border:1px solid #b05a2f; color:#b05a2f;" onclick="reinitialiserAjouts()">Réinitialiser les ajouts</button>
+      </div>
+
+      <div class="carte carte-tardive" id="carteTardif" hidden>
+        <h2 style="margin-bottom:10px; font-size:1.1rem;">⏱️ Tardif</h2>
+        <p class="sous-titre">Ce qui arrive après la balance — à décider vous-même selon ce qu'il vous reste, par exemple en levain.</p>
         <div class="grille-quantites" id="grilleQuantitesTardif"></div>
-        <button class="btn" style="background:none; border:1px solid #b05a2f; color:#b05a2f;" onclick="reinitialiserAjouts()">Réinitialiser les ajouts</button>
       </div>
 
       <div class="carte" id="syntheseBasesWrapper">
@@ -1784,16 +1790,20 @@
     /* ==========================================================
        SECTION RECETTES — PRODUCTION DU JOUR
        ========================================================== */
-    /* La commande tardive faisait doublon avec les ajouts : même saisie, même
-       usage, seule l'étiquette changeait. La variable reste déclarée et vide
-       pour ne pas casser les lectures existantes, mais plus rien ne l'alimente. */
+    /* Tardif : ce qui arrive après la pesée, saisi à la main, séparément
+       d'Ajouts — a une vraie incidence sur les recettes de base (le levain
+       notamment), donc c'est vous qui décidez d'accepter ou non, jamais un
+       calcul automatique. Visible uniquement une fois les pesées figées. */
     let quantitesTardif = {};
     /* Ajouts saisis directement sur une Recette de Base, en grammes : une pâte
        fermentée préparée d'avance ne correspond à aucun pain commandé. */
-    /* Pesées figées. Tant que c'est null, tout ce qui est commandé forme une
-       seule pesée à faire. Une fois figé, ce qui arrive ensuite — commande
-       boutique tardive ou ajout de la main — devient un supplément à peser
-       séparément, parce que la balance est déjà passée. */
+    /* Pesées figées. Tant que c'est null, tout ce qui est commandé (boutique
+       + Ajouts) forme une seule pesée à faire. Une fois figé, Ajouts devient
+       lui aussi figé — historique, plus modifiable — et tout ce qui arrive
+       ensuite se saisit à part, dans Tardif : une commande tardive a une
+       vraie incidence sur les recettes de base (le levain, notamment), donc
+       elle se décide et se saisit à la main, jamais par un recalcul
+       automatique des commandes boutique. */
     let pesees = null;         // { horodatage, quantites: {nomPain: qte} }
     let ongletActifPains = null;
 
@@ -1807,27 +1817,31 @@
         return pesees ? (pesees.quantites[fiche.nom] || 0) : 0;
     }
 
-    // Ce qui est arrivé après le passage de la balance.
+    // Ce qui est arrivé après le passage de la balance — saisi à la main
+    // dans Tardif, jamais déduit automatiquement des commandes boutique.
     function qteSupplement(fiche) {
-        return pesees ? Math.max(0, totalPainActuel(fiche) - qtePesee(fiche)) : 0;
+        return pesees ? (quantitesTardif[fiche.nom] || 0) : 0;
     }
 
     function figerPesees() {
         const quantites = {};
         fichesPains().forEach(f => { quantites[f.nom] = totalPainActuel(f); });
-        pesees = {
-            horodatage: new Date().toISOString(),
-            quantites: quantites
-        };
+        pesees = { horodatage: new Date().toISOString(), quantites: quantites };
         sauvegarderCommandesCloud();
         afficherRecettesPains();
+        if (typeof afficherCommandes === 'function') afficherCommandes();
     }
 
     function annulerPesees() {
-        if (!confirm("Reprendre les pesées ?\n\nLes suppléments arrivés depuis seront réintégrés au tableau principal — à ne faire que si tu n'as pas encore pesé.")) return;
+        if (!confirm("Reprendre les pesées ?\n\nLe tableau Tardif sera vidé et refondu dans le tableau principal — à ne faire que si tu n'as pas encore pesé.")) return;
+        // Tardif redevient sans objet une fois qu'on retire le gel : ce
+        // qu'il contenait rejoint le calcul normal via quantitesCommandes,
+        // qu'on n'avait jamais touché entre-temps.
+        quantitesTardif = {};
         pesees = null;
         sauvegarderCommandesCloud();
         afficherRecettesPains();
+        if (typeof afficherCommandes === 'function') afficherCommandes();
     }
 
     function afficherEtatPesees() {
@@ -1857,8 +1871,8 @@
         el.innerHTML = `
             <h2 style="color:${aFaire ? '#c0392b' : '#2e7d32'}; margin-bottom:4px; font-size:1.1rem;">⚖️ Pesées faites à ${heure}</h2>
             <p class="sous-titre">${aFaire
-                ? `<strong style="color:#b05a2f;">${suppPains} pièce(s) sont arrivées depuis</strong> — voir les suppléments dans chaque onglet.`
-                : "Rien n'est arrivé depuis. Les suppléments s'afficheront ici automatiquement."}</p>
+                ? `<strong style="color:#b05a2f;">${suppPains} pièce(s) en Tardif</strong> — voir le détail dans chaque onglet.`
+                : "Rien en Tardif pour l'instant. Ce que tu ajoutes là s'affichera ici automatiquement."}</p>
             <button class="btn" style="background:none; border:1px solid #b05a2f; color:#b05a2f;" onclick="annulerPesees()">Reprendre les pesées</button>`;
     }
 
@@ -1921,14 +1935,29 @@
                 : 'Aucune commande en ligne pour la prochaine livraison.';
         }
 
-        // --- Grille des quantités tardives ---
-        const grilleT = document.getElementById('grilleQuantitesTardif');
-        grilleT.innerHTML = '';
+        // --- Grille Ajouts (verrouillée une fois la pesée figée : elle en fait partie) ---
+        const grilleA = document.getElementById('grilleQuantitesAjouts');
+        grilleA.innerHTML = '';
         fiches.forEach(f => {
             const val = quantitesCommandes[f.nom] || 0;
             const div = document.createElement('div');
             div.className = 'champ-qte';
-            div.innerHTML = `<label>${f.nom}</label><input type="number" min="0" step="1" value="${val}" onchange="modifierQtePain('${f.nom.replace(/'/g, "\\'")}', parseFloat(this.value)||0)">`;
+            div.innerHTML = `<label>${f.nom}</label><input type="number" step="1" value="${val}" ${pesees ? 'disabled' : ''} onchange="modifierQtePain('${f.nom.replace(/'/g, "\\'")}', parseFloat(this.value)||0)">`;
+            grilleA.appendChild(div);
+        });
+        const btnReset = document.getElementById('btnReinitialiserAjouts');
+        if (btnReset) btnReset.disabled = !!pesees;
+
+        // --- Grille Tardif : uniquement une fois la pesée figée ---
+        const carteTardif = document.getElementById('carteTardif');
+        if (carteTardif) carteTardif.hidden = !pesees;
+        const grilleT = document.getElementById('grilleQuantitesTardif');
+        grilleT.innerHTML = '';
+        fiches.forEach(f => {
+            const val = quantitesTardif[f.nom] || 0;
+            const div = document.createElement('div');
+            div.className = 'champ-qte';
+            div.innerHTML = `<label>${f.nom}</label><input type="number" min="0" step="1" value="${val}" onchange="modifierQteTardif('${f.nom.replace(/'/g, "\\'")}', parseFloat(this.value)||0)">`;
             grilleT.appendChild(div);
         });
 
@@ -1960,8 +1989,17 @@
     }
 
     // Modifie la quantité "normale" : écrit directement dans quantitesCommandes (partagé avec l'onglet Commandes).
+    // Pas de plancher à 0, pour la même raison que changerQteCommande.
     function modifierQtePain(nom, val) {
-        quantitesCommandes[nom] = Math.max(0, val);
+        quantitesCommandes[nom] = val;
+        sauvegarderCommandesCloud();
+        afficherRecettesPains();
+        if (typeof afficherCommandes === 'function') afficherCommandes();
+    }
+
+    // Tardif : distinct d'Ajouts, jamais mélangé — voir le commentaire sur quantitesTardif plus haut.
+    function modifierQteTardif(nom, val) {
+        quantitesTardif[nom] = Math.max(0, val);
         sauvegarderCommandesCloud();
         afficherRecettesPains();
         if (typeof afficherCommandes === 'function') afficherCommandes();
@@ -2004,7 +2042,7 @@
         const lignesSupplement = qteS > 0 ? lignesPour(facteurS) : '';
 
         const detailQte = pesees
-            ? `Pesé : ${qte}${qteS > 0 ? ` · Arrivé depuis : ${qteS}` : ''} · <strong>Total : ${qte + qteS}</strong>`
+            ? `Pesé : ${qte}${qteS > 0 ? ` · Tardif : ${qteS}` : ''} · <strong>Total : ${qte + qteS}</strong>`
             : `Commandes boutique : ${qteBoutique(fiche)} · Ajouts : ${quantitesCommandes[fiche.nom] || 0} · <strong>À peser : ${qte}</strong>`;
 
         div.innerHTML = `
@@ -2017,7 +2055,7 @@
             <div class="info-nb">${detailQte}</div>
             ${qteS > 0 ? `
                 <div class="supplement-tardif">
-                    <h3>⏱️ Seconde pesée — arrivé après la balance (${qteS} pièce(s))</h3>
+                    <h3>⏱️ Tardif (${qteS} pièce(s))</h3>
                     <table>
                         <thead><tr><th>Ingrédient</th><th>Quantité supplémentaire</th></tr></thead>
                         <tbody>${lignesSupplement}</tbody>
@@ -2288,8 +2326,7 @@
                 const data = doc.data();
                 quantitesCommandes = data.values || {};
                 prixVenteCommandes = data.prices || {};
-                // Le champ "tardif" n'est plus lu : la saisie a disparu de l'écran.
-                quantitesTardif = {};
+                quantitesTardif = data.tardif || {};
                 pesees = data.pesees || null;
                 stockProduits = data.stockProduits || {};
                 document.getElementById('statusBarCommandes').textContent = "✅ Synchronisé en temps réel avec le Cloud Firebase";
@@ -2355,15 +2392,37 @@
             .toLowerCase().replace(/[^a-z0-9]/g, '');
     }
 
-    // Quantité issue de la boutique : d'abord par code produit, sinon par nom
-    // (utile tant que la boutique publie encore sous ses anciens identifiants).
-    function qteBoutique(fiche) {
-        if (fiche.id && commandesBoutique[fiche.id]) return commandesBoutique[fiche.id];
-        const cible = cleNom(fiche.nom);
+    // Quantité boutique d'un seul code/nom produit — sans la fusion, pour
+    // pouvoir la réutiliser aussi bien sur une fiche que sur un code fusionné.
+    function qteBoutiqueFiche(id, nom) {
+        if (id && commandesBoutique[id]) return commandesBoutique[id];
+        const cible = cleNom(nom);
         for (const k in commandesBoutique) {
             if (cleNom(nomsBoutique[k] || k) === cible) return commandesBoutique[k];
         }
         return 0;
+    }
+
+    /* Produits dont les commandes doivent se confondre avec une autre fiche —
+       même recette, juste un format différent (ex : Déjeunette = même pâte
+       que Sourdough Baguette, façonnée autrement). Pas de fiche ni d'onglet
+       séparé pour eux : leurs commandes s'ajoutent simplement à la fiche
+       visée. Clé = code produit boutique ; valeur = nom EXACT de la fiche
+       technique visée — "Sourdough Baguette" est une hypothèse reprise de
+       notre échange, à corriger ici si le vrai nom de la fiche diffère. */
+    const PRODUITS_FUSIONNES = {
+        'SOU-DEJ': 'Sourdough Baguette'
+    };
+
+    // Quantité issue de la boutique : d'abord par code produit, sinon par nom
+    // (utile tant que la boutique publie encore sous ses anciens identifiants),
+    // plus tout ce qui est fusionné dans cette fiche (voir PRODUITS_FUSIONNES).
+    function qteBoutique(fiche) {
+        let total = qteBoutiqueFiche(fiche.id, fiche.nom);
+        Object.entries(PRODUITS_FUSIONNES).forEach(([code, cibleNom]) => {
+            if (cleNom(cibleNom) === cleNom(fiche.nom)) total += qteBoutiqueFiche(code, code);
+        });
+        return total;
     }
 
     function afficherCommandes() {
@@ -2388,7 +2447,17 @@
         liste.forEach(prod => {
             const qteBase = quantitesCommandes[prod.nom] || 0;
             const qteBout = qteBoutique(prod);
-            const qte = qteBout + qteBase; // commandes boutique + ajouts manuels
+            /* Pour un pain dont la pesée est déjà figée, le total doit
+               refléter ce qui a vraiment été pesé/façonné, pas juste les
+               compteurs en direct — ceux-ci sont remis à zéro (ou décalés)
+               par le gel et sous-compteraient sinon. C'est ce total qui
+               sert à sortir les sacs et le reste du stock : il ne doit
+               jamais être inférieur à la réalité. Les produits hors
+               catégorie "Pains" n'ont pas de pesée, rien ne change pour eux. */
+            const estPain = prod.categorie === 'Pains';
+            const qte = (estPain && pesees)
+                ? qtePesee(prod) + qteSupplement(prod)
+                : qteBout + qteBase; // commandes boutique + ajouts manuels
             const infoPrix = prixVenteFiche(prod);
             const prixVente = infoPrix.valeur;
             const coutUnitaire = calculerCoutFiche(prod).coutUnitaire;
@@ -2409,7 +2478,7 @@
                 </div>
                 <div class="counter-group">
                     <button class="btn-counter" onclick="changerQteCommande('${prod.nom.replace(/'/g, "\\'")}', -1)">-</button>
-                    <input type="number" class="counter-value" value="${qteBase}" onchange="saisirQteCommande('${prod.nom.replace(/'/g, "\\'")}', this.value)" min="0">
+                    <input type="number" class="counter-value" value="${qteBase}" onchange="saisirQteCommande('${prod.nom.replace(/'/g, "\\'")}', this.value)">
                     <button class="btn-counter" onclick="changerQteCommande('${prod.nom.replace(/'/g, "\\'")}', 1)">+</button>
                 </div>
                 <div class="stock-produit-discret">
@@ -2460,17 +2529,18 @@
 
     function changerQteCommande(nom, delta) {
         const actuelle = quantitesCommandes[nom] || 0;
-        const nouvelle = Math.max(0, actuelle + delta);
-        const deltaReel = nouvelle - actuelle; // tient compte du plafonnement à 0
+        // Pas de plancher à 0 : une valeur négative sert à retirer un pain
+        // déjà fait avant même de passer par ici (hors commande boutique).
+        const nouvelle = actuelle + delta;
         quantitesCommandes[nom] = nouvelle;
-        stockProduits[nom] = (stockProduits[nom] || 0) - deltaReel; // une commande en plus = une pièce vendue en moins au stock
+        stockProduits[nom] = (stockProduits[nom] || 0) - delta;
         sauvegarderCommandesCloud();
         afficherCommandes();
     }
 
     function saisirQteCommande(nom, val) {
         const actuelle = quantitesCommandes[nom] || 0;
-        const nouvelle = Math.max(0, parseInt(val) || 0);
+        const nouvelle = parseInt(val) || 0;
         const deltaReel = nouvelle - actuelle;
         quantitesCommandes[nom] = nouvelle;
         stockProduits[nom] = (stockProduits[nom] || 0) - deltaReel;
@@ -2621,7 +2691,7 @@
         db.collection("production").doc("ordre_du_jour_quantites").set({
             values: quantitesCommandes,
             prices: prixVenteCommandes,
-            tardif: {},
+            tardif: quantitesTardif,
             pesees: pesees,
             stockProduits: stockProduits
         }).catch((err) => console.log("Erreur de sauvegarde : " + err.message));
