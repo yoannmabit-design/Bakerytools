@@ -182,7 +182,8 @@
     .toolbar-cmd { display: flex; gap: 8px; margin-bottom: 12px; max-width: 900px; }
     .card-cmd { background: #ffffff; border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.04); border-left: 5px solid #7a4a1f; margin-bottom: 10px; max-width: 900px; }
     .product-name-cmd { font-weight: 700; font-size: 1rem; color: #3b2c1a; display: block; }
-    .stock-produit-discret { font-size: 0.7rem; color: #a89a86; }
+    .stock-produit-discret { font-size: 0.7rem; color: #a89a86; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .btn-stock { border: 1px solid #e0d3bd; background: #fdf6ec; color: #7a4a1f; border-radius: 6px; padding: 2px 8px; font-size: 0.7rem; cursor: pointer; }
     .price-input-cmd { width: 60px; padding: 2px 4px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.75rem; text-align: center; }
     .counter-group { display: flex; align-items: center; background: #efe0c8; border-radius: 8px; padding: 2px; border: 1px solid #7a4a1f; flex-shrink: 0; width: fit-content; }
     .btn-counter { background: #7a4a1f; color: white; border: none; width: 26px; height: 26px; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer; }
@@ -2411,7 +2412,13 @@
     // L'ERP ne conserve une saisie manuelle que pour les produits qu'elle
     // ne vend pas en ligne.
     let prixBoutique = {};
-    let stockProduits = {}; // { nomFiche: quantité en stock (produits finis) }
+    // Stock réel des produits "limite", et discriminant illimite/limite —
+    // lus en direct depuis boutique_produits (même source que les commandes
+    // en ligne, qui décrémentent déjà ce même champ à la confirmation).
+    // Remplace l'ancien stockProduits (compteur ERP séparé, jamais fiable,
+    // qui mélangeait pain et produits stockables) : supprimé.
+    let stockBoutique = {};      // { code produit : stock actuel, pour mode_stock "limite" }
+    let modeStockBoutique = {};  // { code produit : "illimite" | "limite" }
     let triCommandes = 'az';
     let financeOuvert = false;
 
@@ -2433,7 +2440,6 @@
                 prixVenteCommandes = data.prices || {};
                 quantitesTardif = data.tardif || {};
                 pesees = data.pesees || null;
-                stockProduits = data.stockProduits || {};
                 document.getElementById('statusBarCommandes').textContent = "✅ Synchronisé en temps réel avec le Cloud Firebase";
             }
             afficherCommandes();
@@ -2447,16 +2453,24 @@
         return fichesTechniques.filter(f => f.vendable);
     }
 
-    // Prix de vente du catalogue boutique, suivis en temps réel.
+    // Prix de vente du catalogue boutique, suivis en temps réel — et,
+    // pour la même collection, le discriminant illimite/limite et le
+    // stock réel des produits "limite" (source unique, partagée avec les
+    // commandes en ligne qui le décrémentent déjà à la confirmation).
     function chargerPrixBoutique() {
         if (!db) return;
         db.collection("boutique_produits").onSnapshot((snap) => {
             prixBoutique = {};
+            stockBoutique = {};
+            modeStockBoutique = {};
             snap.forEach((d) => {
                 const v = d.data();
-                if (v && v.publie !== false && typeof v.prix_vente === 'number') {
+                if (!v) return;
+                if (v.publie !== false && typeof v.prix_vente === 'number') {
                     prixBoutique[d.id] = v.prix_vente;
                 }
+                modeStockBoutique[d.id] = v.mode_stock || 'illimite';
+                stockBoutique[d.id] = typeof v.stock === 'number' ? v.stock : 0;
             });
             afficherCommandes();
             if (typeof afficherRecettesPains === 'function') afficherRecettesPains();
@@ -2573,7 +2587,19 @@
 
             const card = document.createElement('div');
             card.className = 'card-cmd';
-            const stockActuelProduit = stockProduits[prod.nom] || 0;
+            // Le pain (illimite) n'a pas de stock — seuls les produits "limite"
+            // (croissants, viennoiseries...) en ont un, lu en direct depuis
+            // boutique_produits. Un produit ERP sans code boutique (vendu
+            // uniquement au marché, jamais publié en ligne) n'a pas non plus
+            // de ligne stock : rien à lire.
+            const modeStock = prod.id ? modeStockBoutique[prod.id] : null;
+            const ligneStock = (modeStock === 'limite')
+                ? `<div class="stock-produit-discret">
+                    Stock : <strong>${stockBoutique[prod.id] ?? 0}</strong>
+                    <button class="btn-stock" onclick="ajouterProduction('${prod.id}', '${prod.nom.replace(/'/g, "\\'")}')">➕ Fabrication</button>
+                    <button class="btn-stock" onclick="sortirPourMarche('${prod.id}', '${prod.nom.replace(/'/g, "\\'")}')">🛒 Sortie marché</button>
+                   </div>`
+                : '';
             card.innerHTML = `
                 <span class="product-name-cmd">${prod.nom}</span>
                 <div style="display:flex; gap:10px; align-items:center; font-size:0.8rem; flex-wrap:wrap;">
@@ -2586,9 +2612,7 @@
                     <input type="number" class="counter-value" value="${qteBase}" onchange="saisirQteCommande('${prod.nom.replace(/'/g, "\\'")}', this.value)">
                     <button class="btn-counter" onclick="changerQteCommande('${prod.nom.replace(/'/g, "\\'")}', 1)">+</button>
                 </div>
-                <div class="stock-produit-discret">
-                    Stock: <input type="number" value="${stockActuelProduit}" step="1" style="width:45px; font-size:0.9em; padding:1px 2px; border:1px solid #e0d3bd; border-radius:3px;" onchange="corrigerStockProduit('${prod.nom.replace(/'/g, "\\'")}', parseFloat(this.value)||0)">
-                </div>
+                ${ligneStock}
             `;
 
             // Marge unitaire : c'est elle qu'on regarde quand on ajuste un prix.
@@ -2638,7 +2662,6 @@
         // déjà fait avant même de passer par ici (hors commande boutique).
         const nouvelle = actuelle + delta;
         quantitesCommandes[nom] = nouvelle;
-        stockProduits[nom] = (stockProduits[nom] || 0) - delta;
         sauvegarderCommandesCloud();
         afficherCommandes();
     }
@@ -2646,9 +2669,7 @@
     function saisirQteCommande(nom, val) {
         const actuelle = quantitesCommandes[nom] || 0;
         const nouvelle = parseInt(val) || 0;
-        const deltaReel = nouvelle - actuelle;
         quantitesCommandes[nom] = nouvelle;
-        stockProduits[nom] = (stockProduits[nom] || 0) - deltaReel;
         sauvegarderCommandesCloud();
         afficherCommandes();
     }
@@ -2659,10 +2680,39 @@
         afficherCommandes();
     }
 
-    function corrigerStockProduit(nom, val) {
-        stockProduits[nom] = val;
-        sauvegarderCommandesCloud();
-        afficherCommandes();
+    /* ==========================================================
+       STOCK DES PRODUITS "LIMITE" — deux mouvements manuels, en plus des
+       mouvements automatiques déjà gérés par commandes-admin.html
+       (décompte à la confirmation, restitution à l'annulation ou à la
+       modification d'une commande en ligne).
+       Écrit directement dans boutique_produits.stock (règle Firestore :
+       estAdmin() requis — d'où la connexion admin ajoutée à l'ERP).
+       ========================================================== */
+    function ecrireStockBoutique(id, nom, delta, motif) {
+        if (!auth || !auth.currentUser) {
+            alert("Connecte-toi en admin (barre latérale) avant de modifier le stock.");
+            return;
+        }
+        if (!db) { alert("Firebase indisponible — impossible d'enregistrer pour le moment."); return; }
+        db.collection("boutique_produits").doc(id).update({
+            stock: firebase.firestore.FieldValue.increment(delta)
+        }).catch((err) => alert("Erreur d'enregistrement du stock (" + motif + ") : " + err.message));
+    }
+
+    function ajouterProduction(id, nom) {
+        const saisie = prompt("Quantité de \"" + nom + "\" qui vient d'être produite ?");
+        if (saisie === null) return;
+        const qte = parseInt(saisie, 10);
+        if (!qte || qte <= 0) { alert("Quantité invalide."); return; }
+        ecrireStockBoutique(id, nom, qte, "fabrication");
+    }
+
+    function sortirPourMarche(id, nom) {
+        const saisie = prompt("Quantité de \"" + nom + "\" sortie pour le marché ?");
+        if (saisie === null) return;
+        const qte = parseInt(saisie, 10);
+        if (!qte || qte <= 0) { alert("Quantité invalide."); return; }
+        ecrireStockBoutique(id, nom, -qte, "sortie marché");
     }
 
     /* ==========================================================
@@ -2715,8 +2765,8 @@
         }).join('\n');
 
         const confirmation = confirm(
-            "Confirmer la production du jour ?\n\nCeci va déduire du stock :\n" + recap +
-            "\n\nEt ajouter les quantités produites au stock des produits finis.\n\nCette action ne peut pas être annulée automatiquement."
+            "Confirmer la production du jour ?\n\nCeci va déduire du stock d'ingrédients :\n" + recap +
+            "\n\nLe stock des produits finis n'est pas touché ici — utilise \"➕ Fabrication\" sur chaque produit après la fournée.\n\nCette action ne peut pas être annulée automatiquement."
         );
         if (!confirmation) return;
 
@@ -2729,11 +2779,6 @@
             }
         });
 
-        // Ajout au stock des produits finis.
-        produits.forEach(f => {
-            const qte = qteBoutique(f) + (quantitesCommandes[f.nom] || 0);
-            stockProduits[f.nom] = (stockProduits[f.nom] || 0) + qte;
-        });
 
         // Instantané pour l'historique quotidien : CA, coût matière, marge, détail par produit.
         let totalCAJour = 0, totalCoutJour = 0, totalPiecesJour = 0;
@@ -2797,8 +2842,7 @@
             values: quantitesCommandes,
             prices: prixVenteCommandes,
             tardif: quantitesTardif,
-            pesees: pesees,
-            stockProduits: stockProduits
+            pesees: pesees
         }).catch((err) => console.log("Erreur de sauvegarde : " + err.message));
     }
 
