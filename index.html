@@ -37,6 +37,34 @@
       white-space: nowrap;
     }
 
+    /* Connexion admin — nécessaire seulement pour écrire dans boutique_produits
+       (stock des produits vendus en ligne). Le reste de l'ERP continue de
+       fonctionner sans connexion, comme avant. */
+    .connexion-admin {
+      padding: 0 10px 12px 10px;
+      border-bottom: 1px solid #333;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    .connexion-admin .qui-admin {
+      display: block;
+      font-size: 0.7rem;
+      color: #9fc98c;
+      margin-bottom: 6px;
+      word-break: break-all;
+    }
+    .connexion-admin button {
+      width: 100%;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 0.7rem;
+      cursor: pointer;
+      background: #7a4a1f;
+      color: #fdf6ec;
+    }
+    .connexion-admin button.deconnexion { background: #333; }
+
     nav ul { list-style: none; }
     nav li {
       padding: 12px 15px;
@@ -194,6 +222,8 @@
 <!-- Firebase SDK Compat Version -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<!-- Auth : nécessaire uniquement pour écrire dans boutique_produits (règles Firestore : estAdmin()) -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <!-- SheetJS : lecture/écriture de fichiers CSV/Excel directement dans le navigateur -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -201,6 +231,11 @@
 
   <nav>
     <div class="app-title">Yoann's French Bakery</div>
+    <div class="connexion-admin">
+      <span id="quiAdmin" class="qui-admin" hidden></span>
+      <button id="btnConnexionAdmin" onclick="connexionAdmin()">🔒 Connexion admin</button>
+      <button id="btnDeconnexionAdmin" class="deconnexion" onclick="deconnexionAdmin()" hidden>Déconnexion</button>
+    </div>
     <ul>
       <li class="tab-btn active" data-section="dashboard" onclick="showTab('dashboard', this)">🏠<br>Accueil</li>
       <li class="tab-btn" data-section="recettes" onclick="showTab('recettes', this)">🍞<br>Recettes</li>
@@ -565,6 +600,76 @@
     } catch (err) {
         console.error("Firebase indisponible : ", err.message);
         // On continue quand même — les sections qui ne dépendent pas de Firebase (Sans Gluten...) doivent fonctionner.
+    }
+
+    /* ==========================================================
+       AUTHENTIFICATION ADMIN
+       Toutes les collections déjà utilisées par cet ERP (ingredients,
+       recettes, historique, production, backups) restent ouvertes sans
+       connexion, comme avant — rien ne change pour elles.
+       Seule boutique_produits exige request.auth != null + un document
+       dans admins/{uid} (règle "estAdmin()"). Cette connexion sert donc
+       uniquement, pour l'instant, à préparer les futures actions de stock
+       qui écriront dans cette collection.
+       Même mécanisme que boutique-admin.html / commandes-admin.html :
+       Google Sign-In, puis vérification d'appartenance à "admins".
+       ========================================================== */
+    let auth = null;
+    try {
+        auth = firebase.auth();
+    } catch (err) {
+        console.error("Auth Firebase indisponible : ", err.message);
+    }
+
+    function connexionAdmin() {
+        if (!auth) return;
+        auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
+            .catch((err) => {
+                console.error(err);
+                alert("Connexion impossible. Autorisez les fenêtres surgissantes et réessayez.");
+            });
+    }
+
+    function deconnexionAdmin() {
+        if (auth) auth.signOut();
+    }
+
+    function majAffichageAdmin(user) {
+        const qui = document.getElementById('quiAdmin');
+        const btnCo = document.getElementById('btnConnexionAdmin');
+        const btnDeco = document.getElementById('btnDeconnexionAdmin');
+        if (user) {
+            qui.textContent = user.email;
+            qui.hidden = false;
+            btnCo.hidden = true;
+            btnDeco.hidden = false;
+        } else {
+            qui.hidden = true;
+            btnCo.hidden = false;
+            btnDeco.hidden = true;
+        }
+    }
+
+    if (auth) {
+        auth.onAuthStateChanged((user) => {
+            if (!user) { majAffichageAdmin(null); return; }
+            // La lecture de son propre doc "admins" n'est elle-même autorisée
+            // que si estAdmin() est déjà vrai : un compte non admin reçoit une
+            // erreur de permission ici, traitée comme "pas accès".
+            db.collection("admins").doc(user.uid).get()
+                .then((snap) => {
+                    if (snap.exists) {
+                        majAffichageAdmin(user);
+                    } else {
+                        auth.signOut();
+                        alert("Ce compte n'a pas accès à l'espace admin (" + user.email + ").");
+                    }
+                })
+                .catch(() => {
+                    auth.signOut();
+                    alert("Vérification d'accès impossible pour le moment (" + user.email + ").");
+                });
+        });
     }
 
     /* ==========================================================
