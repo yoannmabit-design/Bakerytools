@@ -102,7 +102,7 @@
 
     .carte { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 15px; max-width: 900px; margin-bottom: 20px; }
 
-    table { border-collapse: collapse; width: 100%; font-size: 0.9em; }
+    table { border-collapse: collapse; width: 100%; font-size: 1rem; }
     th, td { border: 1px solid var(--trait); padding: 8px; text-align: left; }
     th { background: var(--accent); color: #fff; }
     input[type="text"], input[type="number"], select { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
@@ -135,9 +135,9 @@
     .section.mode-edition .consultation-only { display: none; }
 
     /* Tableaux en lecture seule : plus légers, sans bordures lourdes */
-    .table-lecture { font-size: 0.88rem; }
-    .table-lecture th { background: var(--accent); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.4px; padding: 7px 8px; }
-    .table-lecture td { padding: 7px 8px; border: none; border-bottom: 1px solid var(--creme); }
+    .table-lecture { font-size: 1.05rem; }
+    .table-lecture th { background: var(--accent); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.4px; padding: 11px 10px; }
+    .table-lecture td { padding: 11px 10px; border: none; border-bottom: 1px solid var(--creme); }
     .table-lecture tbody tr:nth-child(even) { background: var(--creme); }
 
     /* Fiches techniques repliables (accordéon) */
@@ -437,6 +437,10 @@
         <button class="btn-tri" onclick="trierPrix('desc')">📉 Prix −</button>
       </div>
 
+      <input type="search" id="rechercheIngredients" placeholder="🔎 Chercher un ingrédient…"
+             oninput="filtreIngredients = this.value; construireVueLectureIngredients(); construireTableauIngredientsEdition();"
+             style="width:100%; box-sizing:border-box; padding:12px 14px; font-size:1.1rem; border:1px solid var(--trait); border-radius:var(--r); margin-bottom:10px; background:var(--papier); color:var(--encre);">
+
       <div class="carte">
         <!-- Vue lecture seule (mode consultation) -->
         <div class="consultation-only" id="vueLectureIngredients"></div>
@@ -523,6 +527,10 @@
         <button class="btn" style="background:var(--ok);" onclick="sauvegarderFichesCloud()">☁️ Enregistrer les fiches</button>
       </div>
 
+      <input type="search" id="rechercheCouts" placeholder="🔎 Chercher une fiche (nom ou code produit)…"
+             oninput="filtreCouts = this.value; afficherFichesCouts();"
+             style="width:100%; box-sizing:border-box; padding:12px 14px; font-size:1.1rem; border:1px solid var(--trait); border-radius:var(--r); margin-top:10px; margin-bottom:10px; background:var(--papier); color:var(--encre);">
+
       <div id="conteneurFichesParCategorie" style="margin-top:10px;"></div>
 
       <button class="bloc-toggle" onclick="toggleBloc('outilsCouts', 'iconeOutilsCouts')">
@@ -555,6 +563,10 @@
         <button class="btn-tri" onclick="trierCommandes('az')">Produit A-Z</button>
         <button class="btn-tri" onclick="trierCommandes('qte')">Quantité ▼</button>
       </div>
+
+      <input type="search" id="rechercheCommandes" placeholder="🔎 Chercher un produit (nom ou code)…"
+             oninput="filtreCommandesTab = this.value; afficherCommandes();"
+             style="width:100%; box-sizing:border-box; padding:12px 14px; font-size:1.1rem; border:1px solid var(--trait); border-radius:var(--r); margin-bottom:10px; background:var(--papier); color:var(--encre);">
 
       <button class="btn" style="background:#16a34a; font-size:1rem; padding:14px 20px; width:100%; max-width:900px; margin-bottom:15px; box-shadow:0 2px 8px rgba(22,163,74,0.3);" onclick="confirmerProductionDuJour()">✅ Confirmer la production du jour (déduit le stock matières premières)</button>
 
@@ -798,6 +810,7 @@
     ];
 
     let listeIngredients = [];
+    let filtreIngredients = '';
     let sensAlphabetique = true;
 
     function chargerIngredients() {
@@ -848,11 +861,20 @@
     function construireVueLectureIngredients() {
         const el = document.getElementById('vueLectureIngredients');
         if (!el) return;
+        const filtre = cleNom(filtreIngredients);
+        const items = filtre
+            ? listeIngredients.filter(item => cleNom(item.nom).includes(filtre))
+            : listeIngredients;
         if (listeIngredients.length === 0) {
             el.innerHTML = '<p style="color:var(--encre-doux); font-size:0.85em;">Aucun ingrédient chargé pour l\'instant.</p>';
             return;
         }
-        const lignes = listeIngredients.map((item, index) => {
+        if (items.length === 0) {
+            el.innerHTML = '<p style="color:var(--encre-doux); font-size:0.85em;">Aucun ingrédient ne correspond à cette recherche.</p>';
+            return;
+        }
+        const lignes = items.map((item) => {
+            const index = listeIngredients.indexOf(item);
             const unite = item.type === 'kg' ? '₱/kg' : '₱/u.';
             const stock = item.stockActuel || 0;
             return `<tr>
@@ -865,6 +887,7 @@
         }).join('');
 
         const nbStockBas = listeIngredients.filter(i => i.stockBas).length;
+        const compte = filtre ? `${items.length} / ${listeIngredients.length} ingrédient(s)` : `${listeIngredients.length} ingrédient(s)`;
         el.innerHTML = `
             <div style="overflow-x:auto;">
               <table class="table-lecture">
@@ -873,7 +896,7 @@
               </table>
             </div>
             <p style="font-size:0.75rem; color:var(--encre-doux); margin-top:10px;">
-              ${listeIngredients.length} ingrédient(s)${nbStockBas > 0 ? ` — <span style="color:var(--alerte); font-weight:bold;">${nbStockBas} en stock bas</span>` : ''} · la colonne "Alerte" reste cochable en consultation, elle s'enregistre toute seule.
+              ${compte}${nbStockBas > 0 ? ` — <span style="color:var(--alerte); font-weight:bold;">${nbStockBas} en stock bas</span>` : ''} · la colonne "Alerte" reste cochable en consultation, elle s'enregistre toute seule.
             </p>`;
     }
 
@@ -881,7 +904,9 @@
         const corps = document.getElementById('corpsTableau');
         if (!corps) return;
         corps.innerHTML = '';
+        const filtre = cleNom(filtreIngredients);
         listeIngredients.forEach((item, index) => {
+            if (filtre && !cleNom(item.nom).includes(filtre)) return;
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><input type="text" value="${item.nom}" onchange="modifierIngredient(${index}, 'nom', this.value)"></td>
@@ -1371,6 +1396,7 @@
     const CATEGORIES = ["Recette de Base", "Pains", "Viennoiseries", "Autres"];
 
     let fichesTechniques = [];
+    let filtreCouts = '';
     let fichesOuvertes = {}; // { nomFiche: true } — quelles fiches sont dépliées à l'écran
 
     function chargerFiches() {
@@ -1474,10 +1500,22 @@
             return;
         }
 
+        // Recherche par nom OU par code produit (id) — les codes sont ce que
+        // vous retenez réellement (BUT-CRO, PAI-BAG...), pas les noms complets.
+        const filtre = cleNom(filtreCouts);
+        const toutes = fichesTechniques.map((f, idx) => ({ f, idx }));
+        const visibles = filtre
+            ? toutes.filter(({ f }) => cleNom(f.nom).includes(filtre) || cleNom(f.id).includes(filtre))
+            : toutes;
+
+        if (filtre && visibles.length === 0) {
+            conteneur.innerHTML = '<p style="color:var(--encre-doux); font-size:0.85em;">Aucune fiche ne correspond à cette recherche.</p>';
+            majIndicateursMode();
+            return;
+        }
+
         CATEGORIES.forEach(cat => {
-            const fichesCat = fichesTechniques
-                .map((f, idx) => ({ f, idx }))
-                .filter(({ f }) => f.categorie === cat);
+            const fichesCat = visibles.filter(({ f }) => f.categorie === cat);
 
             if (fichesCat.length === 0) return;
 
@@ -2436,6 +2474,7 @@
     let stockBoutique = {};      // { code produit : stock actuel, pour mode_stock "limite" }
     let modeStockBoutique = {};  // { code produit : "illimite" | "limite" }
     let triCommandes = 'az';
+    let filtreCommandesTab = '';
     let financeOuvert = false;
 
     function formatPeso(nombre) {
@@ -2631,11 +2670,21 @@
                         Marge: ${formatPeso(margeU)}${prixVente > 0 ? ` · ${tauxU.toFixed(0)} %` : ''}</span>
                 </div>
             `;
-            conteneur.appendChild(card);
+            // Le filtre ne change que ce qui s'affiche : les totaux financiers
+            // et la déduction d'ingrédients doivent toujours porter sur la
+            // journée entière, pas juste sur ce qu'on est en train de chercher.
+            const filtre = cleNom(filtreCommandesTab);
+            if (!filtre || cleNom(prod.nom).includes(filtre) || cleNom(prod.id).includes(filtre)) {
+                conteneur.appendChild(card);
+            }
         });
 
         const margeBrute = totalCA - totalCoutMatiere;
         const tauxMarge = totalCA > 0 ? (margeBrute / totalCA) * 100 : 0;
+
+        if (liste.length > 0 && conteneur.children.length === 0) {
+            conteneur.innerHTML = '<p style="color:var(--encre-doux); font-size:0.85em;">Aucun produit ne correspond à cette recherche.</p>';
+        }
 
         document.getElementById('totalPiecesCommandes').textContent = totalPcs;
         document.getElementById('totalCoutCommandes').textContent = "Matière : " + formatPeso(totalCoutMatiere);
