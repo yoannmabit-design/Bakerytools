@@ -144,8 +144,8 @@
     .fiche-ligne { background: #fff; border: 1px solid var(--trait); border-radius: 8px; margin-bottom: 6px; max-width: 900px; overflow: hidden; }
     .fiche-entete { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 11px 12px; cursor: pointer; }
     .fiche-entete:hover { background: var(--creme); }
-    .fiche-titre { font-weight: bold; color: var(--encre); font-size: 0.95rem; }
-    .fiche-meta { font-size: 0.8rem; color: var(--accent); font-weight: bold; white-space: nowrap; }
+    .fiche-titre { font-weight: bold; color: var(--encre); font-size: 1.1rem; }
+    .fiche-meta { font-size: 0.95rem; color: var(--accent); font-weight: bold; white-space: nowrap; }
     .fiche-corps { padding: 0 12px 12px 12px; border-top: 1px solid var(--creme); }
     .titre-categorie { margin: 20px 0 8px 0; color: var(--accent); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; }
 
@@ -192,9 +192,9 @@
     .toolbar-cmd { display: flex; gap: 8px; margin-bottom: 12px; max-width: 900px; }
     .card-cmd { background: #ffffff; border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.04); border-left: 5px solid var(--accent); margin-bottom: 10px; max-width: 900px; }
     .product-name-cmd { font-weight: 700; font-size: 1rem; color: var(--encre); display: block; }
-    .stock-produit-discret { font-size: 0.7rem; color: #a89a86; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-    .btn-stock { border: 1px solid var(--trait); background: var(--creme); color: var(--accent); border-radius: 6px; padding: 2px 8px; font-size: 0.7rem; cursor: pointer; }
-    .price-input-cmd { width: 60px; padding: 2px 4px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.75rem; text-align: center; }
+    .stock-produit-discret { font-size: 0.9rem; color: #a89a86; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .btn-stock { border: 1px solid var(--trait); background: var(--creme); color: var(--accent); border-radius: 6px; padding: 8px 12px; font-size: 0.9rem; cursor: pointer; }
+    .price-input-cmd { width: 80px; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.95rem; text-align: center; }
     .counter-group { display: flex; align-items: center; background: var(--creme); border-radius: 8px; padding: 2px; border: 1px solid var(--accent); flex-shrink: 0; width: fit-content; }
     .btn-counter { background: var(--accent); color: white; border: none; width: 26px; height: 26px; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer; }
     .counter-value { width: 32px; text-align: center; font-weight: bold; font-size: 0.9rem; color: var(--accent); border: none; background: transparent; }
@@ -225,7 +225,7 @@
       nav li { padding: 6px 2px; font-size: 0.7rem; justify-content: center; text-align: center; border-radius: 4px; background: #242424; white-space: normal; line-height: 1.1; }
       nav li.active { background: var(--accent); }
       main { padding: 12px; padding-bottom: 90px; }
-      .table-lecture { font-size: 0.82rem; }
+      .table-lecture { font-size: 0.95rem; }
       .table-lecture td { padding: 6px 5px; }
     }
 </style>
@@ -1620,9 +1620,12 @@
                         </select>
                     </td>
                     <td>
-                        <select onchange="modifierIngredFicheNom(${pIdx}, ${iIdx}, this.value)">
+                        <input list="options-${pIdx}-${iIdx}" value="${ing.nom.replace(/"/g, '&quot;')}"
+                               placeholder="Chercher un ingrédient…"
+                               onchange="modifierIngredFicheNom(${pIdx}, ${iIdx}, this.value)">
+                        <datalist id="options-${pIdx}-${iIdx}">
                             ${listeIngredientsDisponiblesOptions(pIdx, ing.type, ing.nom)}
-                        </select>
+                        </datalist>
                     </td>
                     <td style="width:110px;">
                         <input type="number" step="0.1" value="${ing.qte}" onchange="modifierIngredFicheQte(${pIdx}, ${iIdx}, parseFloat(this.value)||0)"> g
