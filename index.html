@@ -2016,7 +2016,11 @@
         } else {
             grille.innerHTML = '';
             fiches.forEach(f => {
-                const val = qteBoutique(f);
+                // Avant la pesée : ce que la boutique demande. Une fois pesé,
+                // ce qui compte ici, c'est ce qui reste à façonner en plus —
+                // le pesé lui-même est déjà fait, plus la peine de le revoir.
+                const val = pesees ? qteSupplement(f) : qteBoutique(f);
+                const aFaire = pesees && val > 0;
                 const div = document.createElement('div');
                 div.className = 'champ-qte';
                 /* Chaque case ouvre la recette du pain : c'est la grille qu'on
@@ -2028,17 +2032,19 @@
                             style="width:100%; display:block; text-align:center; font:inherit;
                                    font-size:1.4em; font-weight:bold; padding:8px; cursor:pointer;
                                    border:1px solid transparent;
-                                   background:${val > 0 ? '#e8f0f4' : '#f5f0e6'};
-                                   color:${val > 0 ? '#2f4858' : '#a89a86'};
+                                   background:${aFaire ? '#fdecea' : (val > 0 ? '#e8f0f4' : '#f5f0e6')};
+                                   color:${aFaire ? '#c0392b' : (val > 0 ? '#2f4858' : '#a89a86')};
                                    border-radius:6px;"
                             title="Voir la recette">${val}</button>`;
                 div.querySelector('.case-pain').onclick = () => ouvrirRecette(f.nom);
                 grille.appendChild(div);
             });
             const st = document.getElementById('sousTitreBoutique');
-            if (st) st.textContent = dateBoutique
-                ? 'Commandes clients pour la livraison du ' + dateBoutique + ' — lecture seule.'
-                : 'Aucune commande en ligne pour la prochaine livraison.';
+            if (st) st.textContent = pesees
+                ? 'Tardif à façonner depuis la pesée de ' + new Date(pesees.horodatage).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + ' — ce qui est arrivé après.'
+                : (dateBoutique
+                    ? 'Commandes clients pour la livraison du ' + dateBoutique + ' — lecture seule.'
+                    : 'Aucune commande en ligne pour la prochaine livraison.');
         }
 
         // --- Grille Ajouts (verrouillée une fois la pesée figée : elle en fait partie) ---
@@ -2523,26 +2529,31 @@
     }
 
     /* Produits dont les commandes doivent se confondre avec une autre fiche —
-       même recette, juste un format différent (ex : Déjeunette = même pâte
-       que Sourdough Baguette, façonnée autrement). Pas de fiche ni d'onglet
-       séparé pour eux : leurs commandes s'ajoutent simplement à la fiche
-       visée. Clé = code produit boutique ; valeur = nom EXACT de la fiche
-       technique visée — "Sourdough Baguette" est une hypothèse reprise de
-       notre échange, à corriger ici si le vrai nom de la fiche diffère. */
+       même pâte, juste un nom commercial différent. Pas de fiche ni d'onglet
+       séparé pour eux : leurs commandes s'ajoutent à la fiche visée, pondérées
+       par "ratio" pour que la quantité de pâte reste juste quand le poids
+       diffère (Déjeunette = moitié du poids d'une Sourdough Baguette, d'où
+       ratio: 0.5 — deux Déjeunette = une baguette de pâte).
+       Clé = code produit boutique ; valeur = { fiche: nom EXACT de la fiche
+       technique visée, ratio: poids relatif à une pièce de cette fiche }. */
     const PRODUITS_FUSIONNES = {
-        'SOU-DEJ': 'Sourdough Baguette'
+        'SOU-DEJ': { fiche: 'Sourdough Baguette', ratio: 0.5 }
     };
 
     // Quantité issue de la boutique : d'abord par code produit, sinon par nom
     // (utile tant que la boutique publie encore sous ses anciens identifiants),
-    // plus tout ce qui est fusionné dans cette fiche (voir PRODUITS_FUSIONNES).
+    // plus tout ce qui est fusionné dans cette fiche (voir PRODUITS_FUSIONNES),
+    // pondéré par le ratio de poids de chaque produit fusionné.
     function qteBoutique(fiche) {
         let total = qteBoutiqueFiche(fiche.id, fiche.nom);
-        Object.entries(PRODUITS_FUSIONNES).forEach(([code, cibleNom]) => {
-            if (cleNom(cibleNom) === cleNom(fiche.nom)) total += qteBoutiqueFiche(code, code);
+        Object.entries(PRODUITS_FUSIONNES).forEach(([code, info]) => {
+            if (cleNom(info.fiche) === cleNom(fiche.nom)) {
+                total += qteBoutiqueFiche(code, code) * (info.ratio || 1);
+            }
         });
         return total;
     }
+
 
     function afficherCommandes() {
         const conteneur = document.getElementById('conteneurCartesCommandes');
