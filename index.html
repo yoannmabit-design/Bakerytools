@@ -457,6 +457,7 @@
                   <th>Fournisseur</th>
                   <th>Contact</th>
                   <th>Stock</th>
+                  <th>Seuil bas</th>
                   <th>Stock bas</th>
                   <th></th>
                 </tr>
@@ -877,16 +878,21 @@
             const index = listeIngredients.indexOf(item);
             const unite = item.type === 'kg' ? '₱/kg' : '₱/u.';
             const stock = item.stockActuel || 0;
+            const seuil = Number(item.seuilBas) || 0;
+            const bas = estStockBas(item);
+            const infoBulle = seuil > 0
+                ? `Automatique — seuil : ${seuil.toLocaleString('fr-FR')} ${item.type === 'kg' ? 'kg' : 'u.'}`
+                : "Signaler un stock bas (enregistré aussitôt)";
             return `<tr>
-                <td style="${item.stockBas ? 'color:var(--alerte); font-weight:bold;' : ''}">${item.nom}</td>
+                <td style="${bas ? 'color:var(--alerte); font-weight:bold;' : ''}">${item.nom}</td>
                 <td style="text-align:right; white-space:nowrap;"><strong>${(item.prix || 0).toLocaleString('fr-FR')}</strong> <span style="color:var(--encre-doux); font-size:0.85em;">${unite}</span></td>
                 <td style="color:var(--encre-doux);">${item.fournisseur || '—'}</td>
                 <td style="text-align:right; white-space:nowrap; color:${stock < 0 ? 'var(--alerte)' : 'var(--encre)'};">${stock.toLocaleString('fr-FR', { maximumFractionDigits: 2 })} ${item.type === 'kg' ? 'kg' : 'u.'}</td>
-                <td style="text-align:center;"><input type="checkbox" style="width:auto; cursor:pointer;" ${item.stockBas ? 'checked' : ''} onchange="toggleStockBas(${index}, this.checked)" title="Signaler un stock bas (enregistré aussitôt)"></td>
+                <td style="text-align:center;"><input type="checkbox" style="width:auto; cursor:${seuil > 0 ? 'default' : 'pointer'};" ${bas ? 'checked' : ''} ${seuil > 0 ? 'disabled' : ''} onchange="toggleStockBas(${index}, this.checked)" title="${infoBulle}"></td>
             </tr>`;
         }).join('');
 
-        const nbStockBas = listeIngredients.filter(i => i.stockBas).length;
+        const nbStockBas = listeIngredients.filter(estStockBas).length;
         const compte = filtre ? `${items.length} / ${listeIngredients.length} ingrédient(s)` : `${listeIngredients.length} ingrédient(s)`;
         el.innerHTML = `
             <div style="overflow-x:auto;">
@@ -920,7 +926,8 @@
                 <td><input type="text" value="${item.fournisseur || ''}" onchange="modifierIngredient(${index}, 'fournisseur', this.value)"></td>
                 <td><input type="text" value="${item.contact || ''}" onchange="modifierIngredient(${index}, 'contact', this.value)"></td>
                 <td><input type="number" step="0.01" value="${item.stockActuel || 0}" style="width:70px;" onchange="modifierIngredient(${index}, 'stockActuel', parseFloat(this.value) || 0)"> <span style="font-size:0.7em; color:var(--encre-doux);">${item.type === 'kg' ? 'kg' : 'u.'}</span></td>
-                <td style="text-align:center;"><input type="checkbox" style="width:auto;" ${item.stockBas ? 'checked' : ''} onchange="toggleStockBas(${index}, this.checked)"></td>
+                <td><input type="number" step="0.01" min="0" value="${item.seuilBas || ''}" placeholder="—" style="width:70px;" onchange="modifierIngredient(${index}, 'seuilBas', parseFloat(this.value) || 0)"> <span style="font-size:0.7em; color:var(--encre-doux);">${item.type === 'kg' ? 'kg' : 'u.'}</span></td>
+                <td style="text-align:center;"><input type="checkbox" style="width:auto;" ${estStockBas(item) ? 'checked' : ''} ${Number(item.seuilBas) > 0 ? 'disabled' : ''} onchange="toggleStockBas(${index}, this.checked)" title="${Number(item.seuilBas) > 0 ? "Automatique tant qu'un seuil est renseigné — vide le champ Seuil bas pour repasser en manuel." : "Manuel — renseigne un seuil pour rendre ça automatique."}"></td>
                 <td><button class="btn-sup" onclick="supprimerIngredient(${index})">X</button></td>
             `;
             corps.appendChild(tr);
@@ -959,6 +966,16 @@
         if (db) sauvegarderCloud(true);
     }
 
+    /* Seuil automatique, ingrédient par ingrédient. Tant qu'aucun seuil n'est
+       renseigné (0 ou vide) pour un ingrédient donné, on retombe sur la case
+       manuelle existante — rien ne casse pendant que les seuils se
+       configurent progressivement, ingrédient par ingrédient. */
+    function estStockBas(item) {
+        const seuil = Number(item.seuilBas) || 0;
+        if (seuil > 0) return (Number(item.stockActuel) || 0) <= seuil;
+        return !!item.stockBas;
+    }
+
     // Double sécurité : la suppression n'existe qu'en mode édition ET demande confirmation.
     function supprimerIngredient(index) {
         const nom = listeIngredients[index] ? listeIngredients[index].nom : '';
@@ -976,7 +993,7 @@
     }
 
     function genererMessageFournisseur(fournisseur, idSafe) {
-        const enRupture = listeIngredients.filter(i => i.stockBas && ((i.fournisseur || '').trim() || 'Fournisseur non renseigné') === fournisseur);
+        const enRupture = listeIngredients.filter(i => estStockBas(i) && ((i.fournisseur || '').trim() || 'Fournisseur non renseigné') === fournisseur);
         const listeNoms = enRupture.map(i => '- ' + i.nom).join('\n');
         const message = `Bonjour ${fournisseur !== 'Fournisseur non renseigné' ? fournisseur : ''},\n\nJe souhaiterais commander :\n${listeNoms}\n\nMerci,\nYoann's French Bakery`;
 
@@ -1016,7 +1033,7 @@
         const carte = document.getElementById('carteReappro');
         if (!conteneur) return;
 
-        const enRupture = listeIngredients.filter(i => i.stockBas);
+        const enRupture = listeIngredients.filter(estStockBas);
         if (enRupture.length === 0) {
             carte.style.display = 'none';
             conteneur.innerHTML = '';
@@ -1084,7 +1101,16 @@
         if (!enRupture || enRupture.length === 0) {
             el.innerHTML = '<p style="color:var(--ok); font-weight:bold; font-size:0.9rem;">✅ Aucune alerte — tous les stocks sont bons.</p>';
         } else {
-            el.innerHTML = `<p style="color:var(--alerte); font-weight:bold; font-size:0.95rem;">⚠️ ${enRupture.length} ingrédient(s) en stock bas : ${enRupture.map(i => i.nom).join(', ')}</p>`;
+            const puces = enRupture.map(i => {
+                const unite = i.type === 'kg' ? 'kg' : 'u.';
+                const detail = Number(i.seuilBas) > 0
+                    ? ` — ${(i.stockActuel || 0).toLocaleString('fr-FR', { maximumFractionDigits: 2 })} / seuil ${Number(i.seuilBas).toLocaleString('fr-FR')} ${unite}`
+                    : '';
+                return `<li>${i.nom}${detail}</li>`;
+            }).join('');
+            el.innerHTML = `
+                <p style="color:var(--alerte); font-weight:bold; font-size:0.95rem; margin-bottom:6px;">⚠️ ${enRupture.length} ingrédient(s) en stock bas :</p>
+                <ul style="margin:0; padding-left:20px; font-size:0.95rem; color:var(--encre);">${puces}</ul>`;
         }
     }
 
