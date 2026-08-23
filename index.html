@@ -2056,6 +2056,18 @@
             div.className = 'champ-qte';
             div.innerHTML = `<label>${f.nom}</label><input type="number" step="1" value="${val}" ${pesees ? 'disabled' : ''} onchange="modifierQtePain('${f.nom.replace(/'/g, "\\'")}', parseFloat(this.value)||0)">`;
             grilleA.appendChild(div);
+
+            // Produits fusionnés sur cette fiche (ex : Déjeunette sur Sourdough
+            // Baguette) : pas de fiche à eux, mais un champ d'ajout manuel quand
+            // même — sinon impossible d'en saisir en dehors des commandes en ligne.
+            Object.entries(PRODUITS_FUSIONNES).forEach(([code, info]) => {
+                if (cleNom(info.fiche) !== cleNom(f.nom)) return;
+                const valF = ajoutsFusionnes[code] || 0;
+                const divF = document.createElement('div');
+                divF.className = 'champ-qte';
+                divF.innerHTML = `<label>↳ ${code} (fusionné, ×${info.ratio})</label><input type="number" min="0" step="1" value="${valF}" ${pesees ? 'disabled' : ''} onchange="modifierAjoutFusionne('${code}', this.value)">`;
+                grilleA.appendChild(divF);
+            });
         });
         const btnReset = document.getElementById('btnReinitialiserAjouts');
         if (btnReset) btnReset.disabled = !!pesees;
@@ -2120,6 +2132,7 @@
     function reinitialiserAjouts() {
         if (!confirm("Remettre tous les ajouts à zéro ?")) return;
         quantitesCommandes = {};
+        ajoutsFusionnes = {};
         sauvegarderCommandesCloud();
         afficherRecettesPains();
         if (typeof afficherCommandes === 'function') afficherCommandes();
@@ -2446,6 +2459,7 @@
                 prixVenteCommandes = data.prices || {};
                 quantitesTardif = data.tardif || {};
                 pesees = data.pesees || null;
+                ajoutsFusionnes = data.ajoutsFusionnes || {};
                 document.getElementById('statusBarCommandes').textContent = "✅ Synchronisé en temps réel avec le Cloud Firebase";
             }
             afficherCommandes();
@@ -2540,18 +2554,33 @@
         'SOU-DEJ': { fiche: 'Sourdough Baguette', ratio: 0.5 }
     };
 
+    /* Ajouts manuels pour un produit fusionné (Déjeunette n'a plus de fiche
+       ni de champ Ajouts à elle — sans ceci, il n'y aurait aucun moyen d'en
+       saisir à la main, seulement ce qui vient de la boutique en ligne).
+       Clé = code produit fusionné (voir PRODUITS_FUSIONNES). */
+    let ajoutsFusionnes = {};
+
     // Quantité issue de la boutique : d'abord par code produit, sinon par nom
     // (utile tant que la boutique publie encore sous ses anciens identifiants),
-    // plus tout ce qui est fusionné dans cette fiche (voir PRODUITS_FUSIONNES),
-    // pondéré par le ratio de poids de chaque produit fusionné.
+    // plus tout ce qui est fusionné dans cette fiche (voir PRODUITS_FUSIONNES) —
+    // commandes en ligne ET ajout manuel de ce produit fusionné — pondéré par
+    // le ratio de poids de chaque produit fusionné.
     function qteBoutique(fiche) {
         let total = qteBoutiqueFiche(fiche.id, fiche.nom);
         Object.entries(PRODUITS_FUSIONNES).forEach(([code, info]) => {
             if (cleNom(info.fiche) === cleNom(fiche.nom)) {
-                total += qteBoutiqueFiche(code, code) * (info.ratio || 1);
+                const qteCode = qteBoutiqueFiche(code, code) + (ajoutsFusionnes[code] || 0);
+                total += qteCode * (info.ratio || 1);
             }
         });
         return total;
+    }
+
+    function modifierAjoutFusionne(code, val) {
+        ajoutsFusionnes[code] = Math.max(0, parseInt(val) || 0);
+        sauvegarderCommandesCloud();
+        afficherRecettesPains();
+        if (typeof afficherCommandes === 'function') afficherCommandes();
     }
 
 
@@ -2853,7 +2882,8 @@
             values: quantitesCommandes,
             prices: prixVenteCommandes,
             tardif: quantitesTardif,
-            pesees: pesees
+            pesees: pesees,
+            ajoutsFusionnes: ajoutsFusionnes
         }).catch((err) => console.log("Erreur de sauvegarde : " + err.message));
     }
 
