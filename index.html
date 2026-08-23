@@ -9,19 +9,29 @@
 <link rel="apple-touch-icon" href="logo.png">
 <meta name="theme-color" content="#1a1a1a">
 <style>
+    /* Palette et rayon reprenant exactement ceux de l'admin
+       (commandes-admin.html) — même variables, même valeurs, copiées ici
+       comme promo.js/abo.js faute de pouvoir partager un fichier CSS entre
+       les deux dépôts. Toute évolution de la palette admin est à reporter
+       ici à la main. */
+    :root {
+      --creme:#fdf6ec; --papier:#fffdf9; --encre:#1f1b16;
+      --encre-doux:#6b6157; --trait:#e2d7c6; --accent:#2f4858;
+      --alerte:#8c2f22; --ok:#3d6b3d; --r:6px;
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { display: flex; height: 100vh; background-color: #fdf6ec; color: #3b2c1a; overflow: hidden; }
+    body { display: flex; height: 100vh; background-color: var(--creme); color: var(--encre); overflow: hidden; }
 
     /* ===== Barre de navigation ===== */
     nav {
       width: 260px;
       background-color: #1a1a1a;
-      color: #fdf6ec;
+      color: var(--creme);
       display: flex;
       flex-direction: column;
       padding: 15px 0;
       flex-shrink: 0;
-      border-right: 3px solid #7a4a1f;
+      border-right: 3px solid var(--accent);
     }
 
     .app-title {
@@ -31,7 +41,7 @@
       margin-bottom: 10px;
       font-size: 0.95rem;
       font-weight: bold;
-      color: #efe0c8;
+      color: var(--creme);
       text-transform: uppercase;
       letter-spacing: 0.5px;
       white-space: nowrap;
@@ -60,8 +70,8 @@
       padding: 6px 8px;
       font-size: 0.7rem;
       cursor: pointer;
-      background: #7a4a1f;
-      color: #fdf6ec;
+      background: var(--accent);
+      color: var(--creme);
     }
     .connexion-admin button.deconnexion { background: #333; }
 
@@ -77,35 +87,35 @@
       transition: all 0.2s ease;
     }
     nav li:hover, nav li.active {
-      background-color: #7a4a1f;
+      background-color: var(--accent);
       color: #ffffff;
       font-weight: bold;
     }
 
     /* ===== Zone de contenu ===== */
-    main { flex-grow: 1; height: 100vh; overflow-y: auto; background: #fdf6ec; padding: 20px; }
+    main { flex-grow: 1; height: 100vh; overflow-y: auto; background: var(--creme); padding: 20px; }
     .section { display: none; }
     .section.active { display: block; }
 
-    h1 { color: #7a4a1f; font-size: 1.4rem; margin-bottom: 5px; }
-    p.sous-titre { margin: 0 0 15px 0; color: #6b5b45; font-size: 0.85rem; }
+    h1 { color: var(--accent); font-size: 1.4rem; margin-bottom: 5px; }
+    p.sous-titre { margin: 0 0 15px 0; color: var(--encre-doux); font-size: 0.85rem; }
 
     .carte { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 15px; max-width: 900px; margin-bottom: 20px; }
 
     table { border-collapse: collapse; width: 100%; font-size: 0.9em; }
-    th, td { border: 1px solid #e0d3bd; padding: 8px; text-align: left; }
-    th { background: #7a4a1f; color: #fff; }
+    th, td { border: 1px solid var(--trait); padding: 8px; text-align: left; }
+    th { background: var(--accent); color: #fff; }
     input[type="text"], input[type="number"], select { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
 
-    .btn { background: #7a4a1f; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; margin-right: 5px; }
-    .btn-tri { background: #efe0c8; color: #7a4a1f; border: 1px solid #7a4a1f; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: bold; }
-    .btn-tri:hover { background: #7a4a1f; color: #fff; }
-    .btn-sup { background: #c0392b; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+    .btn { background: var(--accent); color: #fff; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; margin-right: 5px; }
+    .btn-tri { background: var(--creme); color: var(--accent); border: 1px solid var(--accent); padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: bold; }
+    .btn-tri:hover { background: var(--accent); color: #fff; }
+    .btn-sup { background: var(--alerte); color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
 
-    .status-bar { background: #efe0c8; padding: 8px 12px; border-radius: 6px; margin-bottom: 15px; font-size: 0.85em; font-weight: bold; color: #7a4a1f; max-width: 900px; }
+    .status-bar { background: var(--creme); padding: 8px 12px; border-radius: 6px; margin-bottom: 15px; font-size: 0.85em; font-weight: bold; color: var(--accent); max-width: 900px; }
     .toolbar-tri { margin-bottom: 12px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
-    .placeholder { background: #faf5ed; border: 2px dashed #d9c6a3; border-radius: 10px; padding: 30px; text-align: center; color: #8a7860; max-width: 900px; }
+    .placeholder { background: var(--creme); border: 2px dashed var(--trait); border-radius: 10px; padding: 30px; text-align: center; color: var(--encre-doux); max-width: 900px; }
 
     /* ==========================================================
        MODES CONSULTATION / ÉDITION
@@ -113,11 +123,11 @@
        à l'écran, donc aucune fausse manipulation possible.
        ========================================================== */
     .mode-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; max-width: 900px; }
-    .btn-mode { background: #efe0c8; color: #7a4a1f; border: 1px solid #7a4a1f; padding: 9px 16px; border-radius: 20px; font-weight: bold; font-size: 0.85rem; cursor: pointer; white-space: nowrap; }
+    .btn-mode { background: var(--creme); color: var(--accent); border: 1px solid var(--accent); padding: 9px 16px; border-radius: 20px; font-weight: bold; font-size: 0.85rem; cursor: pointer; white-space: nowrap; }
     .btn-mode:hover { background: #e4d0b0; }
-    .btn-mode.edition { background: #c0392b; color: #fff; border-color: #c0392b; }
-    .btn-mode.edition:hover { background: #a93226; }
-    .mode-info { font-size: 0.78rem; color: #8a7860; }
+    .btn-mode.edition { background: var(--alerte); color: #fff; border-color: var(--alerte); }
+    .btn-mode.edition:hover { background: var(--alerte); }
+    .mode-info { font-size: 0.78rem; color: var(--encre-doux); }
 
     /* Bascule d'affichage pilotée par la classe .mode-edition posée sur la <section> */
     .section .edition-only { display: none; }
@@ -126,21 +136,21 @@
 
     /* Tableaux en lecture seule : plus légers, sans bordures lourdes */
     .table-lecture { font-size: 0.88rem; }
-    .table-lecture th { background: #7a4a1f; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.4px; padding: 7px 8px; }
-    .table-lecture td { padding: 7px 8px; border: none; border-bottom: 1px solid #f0e6d2; }
-    .table-lecture tbody tr:nth-child(even) { background: #faf5ed; }
+    .table-lecture th { background: var(--accent); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.4px; padding: 7px 8px; }
+    .table-lecture td { padding: 7px 8px; border: none; border-bottom: 1px solid var(--creme); }
+    .table-lecture tbody tr:nth-child(even) { background: var(--creme); }
 
     /* Fiches techniques repliables (accordéon) */
-    .fiche-ligne { background: #fff; border: 1px solid #e0d3bd; border-radius: 8px; margin-bottom: 6px; max-width: 900px; overflow: hidden; }
+    .fiche-ligne { background: #fff; border: 1px solid var(--trait); border-radius: 8px; margin-bottom: 6px; max-width: 900px; overflow: hidden; }
     .fiche-entete { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 11px 12px; cursor: pointer; }
-    .fiche-entete:hover { background: #faf5ed; }
-    .fiche-titre { font-weight: bold; color: #3b2c1a; font-size: 0.95rem; }
-    .fiche-meta { font-size: 0.8rem; color: #7a4a1f; font-weight: bold; white-space: nowrap; }
-    .fiche-corps { padding: 0 12px 12px 12px; border-top: 1px solid #f0e6d2; }
-    .titre-categorie { margin: 20px 0 8px 0; color: #7a4a1f; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; }
+    .fiche-entete:hover { background: var(--creme); }
+    .fiche-titre { font-weight: bold; color: var(--encre); font-size: 0.95rem; }
+    .fiche-meta { font-size: 0.8rem; color: var(--accent); font-weight: bold; white-space: nowrap; }
+    .fiche-corps { padding: 0 12px 12px 12px; border-top: 1px solid var(--creme); }
+    .titre-categorie { margin: 20px 0 8px 0; color: var(--accent); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; }
 
     /* Blocs repliables (Outils, Import/Export, Sauvegarde...) */
-    .bloc-toggle { background: #efe0c8; color: #7a4a1f; border: 1px solid #d9c6a3; width: 100%; max-width: 900px; padding: 11px 14px; border-radius: 10px; font-weight: bold; font-size: 0.88rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+    .bloc-toggle { background: var(--creme); color: var(--accent); border: 1px solid var(--trait); width: 100%; max-width: 900px; padding: 11px 14px; border-radius: 10px; font-weight: bold; font-size: 0.88rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
     .bloc-toggle:hover { background: #e4d0b0; }
     .bloc-repliable { display: none; }
     .bloc-repliable.ouvert { display: block; }
@@ -155,13 +165,13 @@
     .champ-qte label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 1em; }
     .champ-qte input { text-align: center; font-size: 1.1em; padding: 8px; }
     /* Cases de la grille Commandes boutique : cliquables vers la recette. */
-    .case-pain:hover { border-color: #7a4a1f !important; }
-    .case-pain:focus-visible { outline: 2px solid #7a4a1f; outline-offset: 2px; }
+    .case-pain:hover { border-color: var(--accent) !important; }
+    .case-pain:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .onglets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 15px; max-width: 900px; }
-    .onglet-btn { background: #efe0c8; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 1em; color: #7a4a1f; font-weight: bold; }
-    .onglet-btn.actif { background: #7a4a1f; color: #fff; }
-    .qte-cell { font-weight: bold; background: #f0e6d2 !important; }
-    .info-hydratation, .info-nb { margin-top: 10px; font-size: 1.05em; color: #6b5b45; }
+    .onglet-btn { background: var(--creme); border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 1em; color: var(--accent); font-weight: bold; }
+    .onglet-btn.actif { background: var(--accent); color: #fff; }
+    .qte-cell { font-weight: bold; background: var(--creme) !important; }
+    .info-hydratation, .info-nb { margin-top: 10px; font-size: 1.05em; color: var(--encre-doux); }
     .supplement-tardif { margin-top: 20px; padding-top: 15px; border-top: 2px dashed #b05a2f; }
     .supplement-tardif h3 { color: #b05a2f; margin-bottom: 10px; font-size: 1.15rem; }
     .supplement-tardif .qte-cell { background: #fbe3d0 !important; }
@@ -170,35 +180,35 @@
 
     /* ===== Sans Gluten ===== */
     .btn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 8px; }
-    .btn-preset { padding: 10px 4px; background: #efe0c8; border: 1px solid #d9c6a3; border-radius: 8px; font-weight: 700; font-size: 0.9rem; color: #7a4a1f; text-align: center; cursor: pointer; }
-    .btn-preset.actif { background: #7a4a1f; color: #fff; }
-    .totals-summary { display: flex; justify-content: space-between; background: #faf5ed; padding: 10px 12px; border-radius: 8px; margin-top: 12px; font-size: 0.85rem; }
-    .val-droite { text-align: right; font-weight: 700; color: #7a4a1f; }
-    tr.highlight { background-color: #faf5ed; }
+    .btn-preset { padding: 10px 4px; background: var(--creme); border: 1px solid var(--trait); border-radius: 8px; font-weight: 700; font-size: 0.9rem; color: var(--accent); text-align: center; cursor: pointer; }
+    .btn-preset.actif { background: var(--accent); color: #fff; }
+    .totals-summary { display: flex; justify-content: space-between; background: var(--creme); padding: 10px 12px; border-radius: 8px; margin-top: 12px; font-size: 0.85rem; }
+    .val-droite { text-align: right; font-weight: 700; color: var(--accent); }
+    tr.highlight { background-color: var(--creme); }
     tr.highlight td { color: #b05a2f; font-weight: bold; }
-    .info-box { background-color: #eef6ef; border-left: 3px solid #2e7d32; padding: 10px; border-radius: 6px; font-size: 0.8rem; color: #1b4332; margin-top: 12px; line-height: 1.4; }
+    .info-box { background-color: #eef6ef; border-left: 3px solid var(--ok); padding: 10px; border-radius: 6px; font-size: 0.8rem; color: #1b4332; margin-top: 12px; line-height: 1.4; }
 
     /* ===== Commandes / Analyse financière ===== */
     .toolbar-cmd { display: flex; gap: 8px; margin-bottom: 12px; max-width: 900px; }
-    .card-cmd { background: #ffffff; border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.04); border-left: 5px solid #7a4a1f; margin-bottom: 10px; max-width: 900px; }
-    .product-name-cmd { font-weight: 700; font-size: 1rem; color: #3b2c1a; display: block; }
+    .card-cmd { background: #ffffff; border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.04); border-left: 5px solid var(--accent); margin-bottom: 10px; max-width: 900px; }
+    .product-name-cmd { font-weight: 700; font-size: 1rem; color: var(--encre); display: block; }
     .stock-produit-discret { font-size: 0.7rem; color: #a89a86; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-    .btn-stock { border: 1px solid #e0d3bd; background: #fdf6ec; color: #7a4a1f; border-radius: 6px; padding: 2px 8px; font-size: 0.7rem; cursor: pointer; }
+    .btn-stock { border: 1px solid var(--trait); background: var(--creme); color: var(--accent); border-radius: 6px; padding: 2px 8px; font-size: 0.7rem; cursor: pointer; }
     .price-input-cmd { width: 60px; padding: 2px 4px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.75rem; text-align: center; }
-    .counter-group { display: flex; align-items: center; background: #efe0c8; border-radius: 8px; padding: 2px; border: 1px solid #7a4a1f; flex-shrink: 0; width: fit-content; }
-    .btn-counter { background: #7a4a1f; color: white; border: none; width: 26px; height: 26px; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer; }
-    .counter-value { width: 32px; text-align: center; font-weight: bold; font-size: 0.9rem; color: #7a4a1f; border: none; background: transparent; }
+    .counter-group { display: flex; align-items: center; background: var(--creme); border-radius: 8px; padding: 2px; border: 1px solid var(--accent); flex-shrink: 0; width: fit-content; }
+    .btn-counter { background: var(--accent); color: white; border: none; width: 26px; height: 26px; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer; }
+    .counter-value { width: 32px; text-align: center; font-weight: bold; font-size: 0.9rem; color: var(--accent); border: none; background: transparent; }
     .liste-prix-vente { max-width: 900px; margin-top: 10px; }
-    .ligne-prix-vente { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; border-bottom: 1px solid #e0d3bd; font-size: 0.85rem; }
+    .ligne-prix-vente { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; border-bottom: 1px solid var(--trait); font-size: 0.85rem; }
     .finance-toggle { background: #1a1a1a; color: #fff; border: none; width: 100%; max-width: 900px; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 0.9rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-    .finance-block { background: #fff; border-radius: 10px; padding: 12px; margin-top: 8px; border: 1px solid #e0d3bd; display: none; max-width: 900px; }
+    .finance-block { background: #fff; border-radius: 10px; padding: 12px; margin-top: 8px; border: 1px solid var(--trait); display: none; max-width: 900px; }
     .finance-block.ouvert { display: block; }
     .finance-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; text-align: center; }
-    .finance-card { background: #faf5ed; padding: 6px 2px; border-radius: 6px; border: 1px solid #e0d3bd; }
-    .finance-card label { font-size: 0.65rem; color: #6b5b45; display: block; font-weight: bold; margin-bottom: 2px; }
+    .finance-card { background: var(--creme); padding: 6px 2px; border-radius: 6px; border: 1px solid var(--trait); }
+    .finance-card label { font-size: 0.65rem; color: var(--encre-doux); display: block; font-weight: bold; margin-bottom: 2px; }
     .finance-card span { font-size: 0.85rem; font-weight: bold; }
     .footer-total { position: sticky; bottom: 0; background: #22313f; color: #ffffff; border-radius: 10px; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 0.9rem; margin-top: 10px; max-width: 900px; }
-    .footer-total-val { font-size: 1.1rem; color: #efe0c8; }
+    .footer-total-val { font-size: 1.1rem; color: var(--creme); }
 
     /* ===== Mobile ===== */
     @media (max-width: 768px) {
@@ -208,12 +218,12 @@
         height: auto;
         padding: 6px 4px;
         border-right: none;
-        border-bottom: 2px solid #7a4a1f;
+        border-bottom: 2px solid var(--accent);
       }
       .app-title { padding: 2px 0 6px 0; margin-bottom: 4px; font-size: 0.85rem; border-bottom: 1px solid #282828; }
       nav ul { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; background: transparent; }
       nav li { padding: 6px 2px; font-size: 0.7rem; justify-content: center; text-align: center; border-radius: 4px; background: #242424; white-space: normal; line-height: 1.1; }
-      nav li.active { background: #7a4a1f; }
+      nav li.active { background: var(--accent); }
       main { padding: 12px; padding-bottom: 90px; }
       .table-lecture { font-size: 0.82rem; }
       .table-lecture td { padding: 6px 5px; }
@@ -255,43 +265,43 @@
       <p class="sous-titre">Résumé du jour — mis à jour en temps réel.</p>
 
       <div class="carte" style="max-width:900px; border-left:5px solid #b35c00;">
-        <h2 style="color:#7a4a1f; margin-bottom:10px; font-size:1.2rem;">📋 Résumé des commandes</h2>
+        <h2 style="color:var(--accent); margin-bottom:10px; font-size:1.2rem;">📋 Résumé des commandes</h2>
         <div id="rappelBoutique" style="font-size:0.85rem; color:#2f4858; background:#e8f0f4; padding:6px 10px; border-radius:6px; margin-bottom:8px;"></div>
         <div id="resumeCommandes"></div>
       </div>
 
       <div class="finance-grid" style="max-width:900px; margin-bottom:15px;">
         <div class="finance-card"><label>C.A. PRÉVU</label><span id="dashCA" style="color:#2563eb; font-size:1.3rem;">₱ 0</span></div>
-        <div class="finance-card"><label>COÛT MATIÈRE</label><span id="dashCout" style="color:#c0392b; font-size:1.3rem;">₱ 0</span></div>
-        <div class="finance-card"><label>MARGE BRUTE</label><span id="dashMarge" style="color:#27ae60; font-size:1.3rem;">₱ 0</span></div>
+        <div class="finance-card"><label>COÛT MATIÈRE</label><span id="dashCout" style="color:var(--alerte); font-size:1.3rem;">₱ 0</span></div>
+        <div class="finance-card"><label>MARGE BRUTE</label><span id="dashMarge" style="color:var(--ok); font-size:1.3rem;">₱ 0</span></div>
       </div>
 
       <div class="carte" style="max-width:900px;">
         <div style="display:flex; justify-content:space-around; text-align:center; flex-wrap:wrap; gap:10px;">
-          <div><div style="font-size:1.6rem; font-weight:bold; color:#7a4a1f;" id="dashTotalPieces">0</div><div style="font-size:0.8rem; color:#6b5b45;">Articles commandés</div></div>
-          <div><div style="font-size:1.6rem; font-weight:bold; color:#7a4a1f;" id="dashTauxMarge">0%</div><div style="font-size:0.8rem; color:#6b5b45;">Taux de marge</div></div>
-          <div><div style="font-size:1.6rem; font-weight:bold; color:#7a4a1f;" id="dashNbProduits">0</div><div style="font-size:0.8rem; color:#6b5b45;">Produits actifs</div></div>
+          <div><div style="font-size:1.6rem; font-weight:bold; color:var(--accent);" id="dashTotalPieces">0</div><div style="font-size:0.8rem; color:var(--encre-doux);">Articles commandés</div></div>
+          <div><div style="font-size:1.6rem; font-weight:bold; color:var(--accent);" id="dashTauxMarge">0%</div><div style="font-size:0.8rem; color:var(--encre-doux);">Taux de marge</div></div>
+          <div><div style="font-size:1.6rem; font-weight:bold; color:var(--accent);" id="dashNbProduits">0</div><div style="font-size:0.8rem; color:var(--encre-doux);">Produits actifs</div></div>
         </div>
       </div>
 
       <div class="carte" style="max-width:900px;" id="dashCarteStockBas">
-        <h2 style="color:#c0392b; margin-bottom:10px; font-size:1.1rem;">📝 Alertes Stock</h2>
+        <h2 style="color:var(--alerte); margin-bottom:10px; font-size:1.1rem;">📝 Alertes Stock</h2>
         <div id="dashStockBas"></div>
-        <button class="btn" style="background:#8a7860; margin-top:8px;" onclick="showTab('ingredients', document.querySelector('[data-section=ingredients]'))">Voir dans Ingrédients →</button>
+        <button class="btn" style="background:var(--encre-doux); margin-top:8px;" onclick="showTab('ingredients', document.querySelector('[data-section=ingredients]'))">Voir dans Ingrédients →</button>
       </div>
 
       <div class="carte" style="max-width:900px;">
-        <h2 style="color:#7a4a1f; margin-bottom:10px; font-size:1.1rem;">🛡️ Sauvegarde</h2>
-        <div id="dashBackupStatus" style="font-size:0.85rem; color:#6b5b45;">—</div>
+        <h2 style="color:var(--accent); margin-bottom:10px; font-size:1.1rem;">🛡️ Sauvegarde</h2>
+        <div id="dashBackupStatus" style="font-size:0.85rem; color:var(--encre-doux);">—</div>
       </div>
 
       <div class="carte" style="max-width:900px;">
-        <h2 style="color:#7a4a1f; margin-bottom:10px; font-size:1.1rem;">📈 Historique (30 derniers jours)</h2>
-        <p style="font-size:0.8rem; color:#6b5b45; margin-bottom:10px;">Un jour est ajouté à l'historique à chaque clic sur "Confirmer la production du jour" (onglet Commandes).</p>
+        <h2 style="color:var(--accent); margin-bottom:10px; font-size:1.1rem;">📈 Historique (30 derniers jours)</h2>
+        <p style="font-size:0.8rem; color:var(--encre-doux); margin-bottom:10px;">Un jour est ajouté à l'historique à chaque clic sur "Confirmer la production du jour" (onglet Commandes).</p>
         <div style="overflow-x:auto;">
           <table>
             <thead><tr><th>Date</th><th>Pièces</th><th>C.A.</th><th>Marge</th><th>Taux</th></tr></thead>
-            <tbody id="corpsHistorique"><tr><td colspan="5" style="text-align:center; color:#8a7860;">Chargement...</td></tr></tbody>
+            <tbody id="corpsHistorique"><tr><td colspan="5" style="text-align:center; color:var(--encre-doux);">Chargement...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -303,7 +313,7 @@
       <p class="sous-titre">Basé sur les fiches techniques de catégorie "Pains" (onglet Coûts). Indique les quantités à produire.</p>
 
       <div class="carte" style="border-left:5px solid #c9a227;">
-        <h2 style="color:#7a4a1f; margin-bottom:10px; font-size:1.1rem;">🛒 Commandes boutique</h2>
+        <h2 style="color:var(--accent); margin-bottom:10px; font-size:1.1rem;">🛒 Commandes boutique</h2>
         <p class="sous-titre" id="sousTitreBoutique">Commandes clients de la prochaine livraison — lecture seule.</p>
         <div class="grille-quantites" id="grilleQuantitesPains"></div>
       </div>
@@ -326,7 +336,7 @@
       </div>
 
       <div class="carte" id="syntheseBasesWrapper">
-        <h2 style="color:#7a4a1f; margin-bottom:10px; font-size:1.1rem;">🫙 Synthèse des Recettes de Base</h2>
+        <h2 style="color:var(--accent); margin-bottom:10px; font-size:1.1rem;">🫙 Synthèse des Recettes de Base</h2>
         <p class="sous-titre">Quantités totales à préparer, suppléments compris.</p>
         <div id="syntheseBases"></div>
       </div>
@@ -345,7 +355,7 @@
       <p class="sous-titre">Pâtons de <strong>475 g cru</strong> (~400 g cuit). Workflow indépendant des pains classiques.</p>
 
       <div class="carte">
-        <h2 style="color:#7a4a1f; margin-bottom:12px; font-size:1.1rem;">⚙️ Réglages</h2>
+        <h2 style="color:var(--accent); margin-bottom:12px; font-size:1.1rem;">⚙️ Réglages</h2>
 
         <div style="margin-bottom:12px;">
           <label style="display:block; font-weight:600; font-size:0.85rem; margin-bottom:4px;">Type de Pain :</label>
@@ -383,7 +393,7 @@
       </div>
 
       <div class="carte">
-        <h2 style="color:#7a4a1f; margin-bottom:12px; font-size:1.1rem;">🥣 À Peser (Pétrissage)</h2>
+        <h2 style="color:var(--accent); margin-bottom:12px; font-size:1.1rem;">🥣 À Peser (Pétrissage)</h2>
         <table>
           <thead><tr><th>Ingrédient</th><th style="text-align:right">Quantité</th></tr></thead>
           <tbody>
@@ -399,7 +409,7 @@
       </div>
 
       <div class="carte">
-        <h2 style="color:#7a4a1f; margin-bottom:12px; font-size:1.1rem;">🪣 Seau de Premix (<span id="bucketWeightTitle">2,55 kg</span>)</h2>
+        <h2 style="color:var(--accent); margin-bottom:12px; font-size:1.1rem;">🪣 Seau de Premix (<span id="bucketWeightTitle">2,55 kg</span>)</h2>
         <table>
           <thead><tr><th>Composition</th><th style="text-align:center">%</th><th style="text-align:right">Seau</th><th style="text-align:right">Fournée</th></tr></thead>
           <tbody id="premixDetailTable"></tbody>
@@ -421,7 +431,7 @@
       </div>
 
       <div class="toolbar-tri">
-        <span style="font-size:0.85em; font-weight:bold; color:#6b5b45;">Trier :</span>
+        <span style="font-size:0.85em; font-weight:bold; color:var(--encre-doux);">Trier :</span>
         <button class="btn-tri" onclick="trierAlphabetique()">🔤 A-Z</button>
         <button class="btn-tri" onclick="trierPrix('asc')">📈 Prix +</button>
         <button class="btn-tri" onclick="trierPrix('desc')">📉 Prix −</button>
@@ -451,12 +461,12 @@
             </table>
           </div>
           <button class="btn" onclick="ajouterLigne()">+ Ajouter un ingrédient</button>
-          <button class="btn" style="background:#27ae60;" onclick="sauvegarderCloud()">☁️ Enregistrer sur Firebase</button>
+          <button class="btn" style="background:var(--ok);" onclick="sauvegarderCloud()">☁️ Enregistrer sur Firebase</button>
         </div>
       </div>
 
       <div class="carte" id="carteReappro">
-        <h2 style="color:#c0392b; margin-bottom:10px; font-size:1.1rem;">📝 Liste de Réapprovisionnement</h2>
+        <h2 style="color:var(--alerte); margin-bottom:10px; font-size:1.1rem;">📝 Liste de Réapprovisionnement</h2>
         <div id="listeReappro"></div>
       </div>
 
@@ -467,32 +477,32 @@
       <div class="bloc-repliable" id="outilsIngredients">
 
         <div class="carte" style="margin-top:8px;">
-          <h2 style="color:#7a4a1f; margin-bottom:8px; font-size:1rem;">📥📤 Import / Export Excel</h2>
-          <p style="font-size:0.78rem; color:#6b5b45; margin-bottom:10px;">
+          <h2 style="color:var(--accent); margin-bottom:8px; font-size:1rem;">📥📤 Import / Export Excel</h2>
+          <p style="font-size:0.78rem; color:var(--encre-doux); margin-bottom:10px;">
             Colonnes reconnues : <strong>Item</strong>, <strong>prix par kilo</strong>, <strong>prix unitaire</strong>, <strong>Fournisseur</strong>, <strong>Contact</strong>.
             L'import fusionne (met à jour l'existant, ajoute le nouveau, ne supprime rien) et bascule la page en mode édition — rien n'est envoyé sur Firebase avant ton clic sur "Enregistrer".
           </p>
           <input type="file" id="fichierImportIngredients" accept=".csv,.xlsx,.xls" style="display:none;" onchange="importerIngredients(event)">
           <button class="btn" style="background:#2980b9;" onclick="document.getElementById('fichierImportIngredients').click()">📥 Importer (CSV/Excel)</button>
           <button class="btn" style="background:#2980b9;" onclick="exporterIngredients()">📤 Exporter en Excel</button>
-          <div id="statusImportIngredients" style="margin-top:10px; font-size:0.85em; font-weight:bold; color:#7a4a1f;"></div>
+          <div id="statusImportIngredients" style="margin-top:10px; font-size:0.85em; font-weight:bold; color:var(--accent);"></div>
         </div>
 
         <div class="carte">
-          <h2 style="color:#7a4a1f; margin-bottom:8px; font-size:1rem;">🛡️ Sauvegarde Automatique</h2>
-          <p style="font-size:0.78rem; color:#6b5b45; margin-bottom:10px;">
+          <h2 style="color:var(--accent); margin-bottom:8px; font-size:1rem;">🛡️ Sauvegarde Automatique</h2>
+          <p style="font-size:0.78rem; color:var(--encre-doux); margin-bottom:10px;">
             Une copie des Ingrédients et des Fiches Techniques est enregistrée une fois par jour dans un emplacement séparé des données actives.
           </p>
           <div class="status-bar" id="statusBackup">🔄 Vérification des sauvegardes...</div>
           <button class="btn" style="background:#16a34a;" onclick="sauvegarderBackupManuel()">💾 Sauvegarder maintenant</button>
-          <button class="btn" style="background:#8a7860;" onclick="afficherListeBackups()">📜 Voir les sauvegardes</button>
+          <button class="btn" style="background:var(--encre-doux);" onclick="afficherListeBackups()">📜 Voir les sauvegardes</button>
           <div id="listeBackups" style="margin-top:10px;"></div>
         </div>
 
         <div class="carte">
-          <h2 style="color:#8a7860; margin-bottom:8px; font-size:1rem;">🧰 Dépannage</h2>
-          <p style="font-size:0.78rem; color:#6b5b45; margin-bottom:6px;">À utiliser uniquement si ta liste est vide par erreur.</p>
-          <button class="btn" style="background:#8a7860;" onclick="chargerListeParDefaut()" id="btnListeParDefaut">Charger la liste par défaut (13 ingrédients génériques)</button>
+          <h2 style="color:var(--encre-doux); margin-bottom:8px; font-size:1rem;">🧰 Dépannage</h2>
+          <p style="font-size:0.78rem; color:var(--encre-doux); margin-bottom:6px;">À utiliser uniquement si ta liste est vide par erreur.</p>
+          <button class="btn" style="background:var(--encre-doux);" onclick="chargerListeParDefaut()" id="btnListeParDefaut">Charger la liste par défaut (13 ingrédients génériques)</button>
         </div>
 
       </div>
@@ -510,7 +520,7 @@
 
       <div class="edition-only" style="max-width:900px; margin-bottom:6px;">
         <button class="btn" onclick="ajouterFiche()">+ Nouvelle fiche</button>
-        <button class="btn" style="background:#27ae60;" onclick="sauvegarderFichesCloud()">☁️ Enregistrer les fiches</button>
+        <button class="btn" style="background:var(--ok);" onclick="sauvegarderFichesCloud()">☁️ Enregistrer les fiches</button>
       </div>
 
       <div id="conteneurFichesParCategorie" style="margin-top:10px;"></div>
@@ -521,14 +531,14 @@
       </button>
       <div class="bloc-repliable" id="outilsCouts">
         <div class="carte" style="margin-top:8px;">
-          <p style="font-size:0.78rem; color:#6b5b45; margin-bottom:10px;">
+          <p style="font-size:0.78rem; color:var(--encre-doux); margin-bottom:10px;">
             Une ligne par ingrédient. Colonnes : <strong>Fiche</strong>, <strong>Catégorie</strong>, <strong>Vendable</strong>, <strong>Pièces</strong>, <strong>Type</strong> (Brut/Composite), <strong>Ingrédient</strong>, <strong>Quantité (g)</strong>, <strong>Farine</strong>.
             L'import fusionne par nom de fiche et crée automatiquement les ingrédients bruts manquants (prix à 0). Rien n'est envoyé sur Firebase avant ton clic sur "Enregistrer".
           </p>
           <input type="file" id="fichierImportFiches" accept=".csv,.xlsx,.xls" style="display:none;" onchange="importerFichesTechniques(event)">
           <button class="btn" style="background:#2980b9;" onclick="document.getElementById('fichierImportFiches').click()">📥 Importer (CSV/Excel)</button>
           <button class="btn" style="background:#2980b9;" onclick="exporterFichesTechniques()">📤 Exporter en Excel</button>
-          <div id="statusImportFiches" style="margin-top:10px; font-size:0.85em; font-weight:bold; color:#7a4a1f;"></div>
+          <div id="statusImportFiches" style="margin-top:10px; font-size:0.85em; font-weight:bold; color:var(--accent);"></div>
         </div>
       </div>
     </section>
@@ -557,14 +567,14 @@
       <div class="finance-block" id="financeBlock">
         <div class="finance-grid">
           <div class="finance-card"><label>C.A. PRÉVU</label><span id="finCA" style="color:#2563eb;">₱ 0</span></div>
-          <div class="finance-card"><label>COÛT MAT.</label><span id="finCout" style="color:#c0392b;">₱ 0</span></div>
-          <div class="finance-card"><label>MARGE BRUTE</label><span id="finMarge" style="color:#27ae60;">₱ 0</span></div>
+          <div class="finance-card"><label>COÛT MAT.</label><span id="finCout" style="color:var(--alerte);">₱ 0</span></div>
+          <div class="finance-card"><label>MARGE BRUTE</label><span id="finMarge" style="color:var(--ok);">₱ 0</span></div>
         </div>
-        <div style="text-align:center; font-size:0.75rem; font-weight:bold; color:#6b5b45; margin-top:10px;">
-          Taux de marge globale : <span id="finTauxMarge" style="color:#27ae60;">0 %</span>
+        <div style="text-align:center; font-size:0.75rem; font-weight:bold; color:var(--encre-doux); margin-top:10px;">
+          Taux de marge globale : <span id="finTauxMarge" style="color:var(--ok);">0 %</span>
         </div>
 
-        <h3 style="margin-top:15px; margin-bottom:6px; font-size:0.9rem; color:#7a4a1f;">Prix de revient & prix de vente par produit</h3>
+        <h3 style="margin-top:15px; margin-bottom:6px; font-size:0.9rem; color:var(--accent);">Prix de revient & prix de vente par produit</h3>
         <div class="liste-prix-vente" id="listePrixVente"></div>
       </div>
 
@@ -728,7 +738,7 @@
             if (!estEnEdition(page)) {
                 el.innerHTML = 'Lecture seule — clique pour modifier';
             } else if (textes[page].dirty) {
-                el.innerHTML = '<span style="color:#c0392b; font-weight:bold;">⚠️ Modifications non enregistrées</span>';
+                el.innerHTML = '<span style="color:var(--alerte); font-weight:bold;">⚠️ Modifications non enregistrées</span>';
             } else {
                 el.innerHTML = 'Modifications possibles — pense à enregistrer';
             }
@@ -839,17 +849,17 @@
         const el = document.getElementById('vueLectureIngredients');
         if (!el) return;
         if (listeIngredients.length === 0) {
-            el.innerHTML = '<p style="color:#8a7860; font-size:0.85em;">Aucun ingrédient chargé pour l\'instant.</p>';
+            el.innerHTML = '<p style="color:var(--encre-doux); font-size:0.85em;">Aucun ingrédient chargé pour l\'instant.</p>';
             return;
         }
         const lignes = listeIngredients.map((item, index) => {
             const unite = item.type === 'kg' ? '₱/kg' : '₱/u.';
             const stock = item.stockActuel || 0;
             return `<tr>
-                <td style="${item.stockBas ? 'color:#c0392b; font-weight:bold;' : ''}">${item.nom}</td>
-                <td style="text-align:right; white-space:nowrap;"><strong>${(item.prix || 0).toLocaleString('fr-FR')}</strong> <span style="color:#8a7860; font-size:0.85em;">${unite}</span></td>
-                <td style="color:#6b5b45;">${item.fournisseur || '—'}</td>
-                <td style="text-align:right; white-space:nowrap; color:${stock < 0 ? '#c0392b' : '#3b2c1a'};">${stock.toLocaleString('fr-FR', { maximumFractionDigits: 2 })} ${item.type === 'kg' ? 'kg' : 'u.'}</td>
+                <td style="${item.stockBas ? 'color:var(--alerte); font-weight:bold;' : ''}">${item.nom}</td>
+                <td style="text-align:right; white-space:nowrap;"><strong>${(item.prix || 0).toLocaleString('fr-FR')}</strong> <span style="color:var(--encre-doux); font-size:0.85em;">${unite}</span></td>
+                <td style="color:var(--encre-doux);">${item.fournisseur || '—'}</td>
+                <td style="text-align:right; white-space:nowrap; color:${stock < 0 ? 'var(--alerte)' : 'var(--encre)'};">${stock.toLocaleString('fr-FR', { maximumFractionDigits: 2 })} ${item.type === 'kg' ? 'kg' : 'u.'}</td>
                 <td style="text-align:center;"><input type="checkbox" style="width:auto; cursor:pointer;" ${item.stockBas ? 'checked' : ''} onchange="toggleStockBas(${index}, this.checked)" title="Signaler un stock bas (enregistré aussitôt)"></td>
             </tr>`;
         }).join('');
@@ -862,8 +872,8 @@
                 <tbody>${lignes}</tbody>
               </table>
             </div>
-            <p style="font-size:0.75rem; color:#8a7860; margin-top:10px;">
-              ${listeIngredients.length} ingrédient(s)${nbStockBas > 0 ? ` — <span style="color:#c0392b; font-weight:bold;">${nbStockBas} en stock bas</span>` : ''} · la colonne "Alerte" reste cochable en consultation, elle s'enregistre toute seule.
+            <p style="font-size:0.75rem; color:var(--encre-doux); margin-top:10px;">
+              ${listeIngredients.length} ingrédient(s)${nbStockBas > 0 ? ` — <span style="color:var(--alerte); font-weight:bold;">${nbStockBas} en stock bas</span>` : ''} · la colonne "Alerte" reste cochable en consultation, elle s'enregistre toute seule.
             </p>`;
     }
 
@@ -884,7 +894,7 @@
                 <td><input type="number" step="0.01" value="${item.prix}" onchange="modifierIngredient(${index}, 'prix', parseFloat(this.value) || 0)"></td>
                 <td><input type="text" value="${item.fournisseur || ''}" onchange="modifierIngredient(${index}, 'fournisseur', this.value)"></td>
                 <td><input type="text" value="${item.contact || ''}" onchange="modifierIngredient(${index}, 'contact', this.value)"></td>
-                <td><input type="number" step="0.01" value="${item.stockActuel || 0}" style="width:70px;" onchange="modifierIngredient(${index}, 'stockActuel', parseFloat(this.value) || 0)"> <span style="font-size:0.7em; color:#6b5b45;">${item.type === 'kg' ? 'kg' : 'u.'}</span></td>
+                <td><input type="number" step="0.01" value="${item.stockActuel || 0}" style="width:70px;" onchange="modifierIngredient(${index}, 'stockActuel', parseFloat(this.value) || 0)"> <span style="font-size:0.7em; color:var(--encre-doux);">${item.type === 'kg' ? 'kg' : 'u.'}</span></td>
                 <td style="text-align:center;"><input type="checkbox" style="width:auto;" ${item.stockBas ? 'checked' : ''} onchange="toggleStockBas(${index}, this.checked)"></td>
                 <td><button class="btn-sup" onclick="supprimerIngredient(${index})">X</button></td>
             `;
@@ -954,10 +964,10 @@
 
         conteneur.style.display = 'block';
         conteneur.innerHTML = `
-            <textarea readonly style="width:100%; min-height:110px; padding:8px; border-radius:6px; border:1px solid #d9c6a3; font-size:0.85em; font-family:inherit;">${message}</textarea>
+            <textarea readonly style="width:100%; min-height:110px; padding:8px; border-radius:6px; border:1px solid var(--trait); font-size:0.85em; font-family:inherit;">${message}</textarea>
             <div style="margin-top:6px; display:flex; gap:6px; flex-wrap:wrap;">
                 <button class="btn-tri" onclick="copierMessage(this)">📋 Copier le texte</button>
-                ${lienWhatsApp ? `<a href="${lienWhatsApp}" target="_blank" class="btn-tri" style="text-decoration:none; background:#25D366; color:#fff; border-color:#25D366;">💬 Ouvrir WhatsApp</a>` : '<span style="font-size:0.75em; color:#8a7860;">Aucun numéro reconnu dans les contacts — copie le texte pour l\'envoyer manuellement.</span>'}
+                ${lienWhatsApp ? `<a href="${lienWhatsApp}" target="_blank" class="btn-tri" style="text-decoration:none; background:#25D366; color:#fff; border-color:#25D366;">💬 Ouvrir WhatsApp</a>` : '<span style="font-size:0.75em; color:var(--encre-doux);">Aucun numéro reconnu dans les contacts — copie le texte pour l\'envoyer manuellement.</span>'}
             </div>
         `;
     }
@@ -1000,13 +1010,13 @@
         conteneur.innerHTML = '';
         Object.keys(parFournisseur).sort().forEach(four => {
             const bloc = document.createElement('div');
-            bloc.style.cssText = 'margin-bottom:12px; padding:10px; background:#fbe3d0; border-radius:8px; border-left:4px solid #c0392b;';
+            bloc.style.cssText = 'margin-bottom:12px; padding:10px; background:#fbe3d0; border-radius:8px; border-left:4px solid var(--alerte);';
             const items = parFournisseur[four].map(ing =>
-                `<li>${ing.nom}${ing.contact ? ` <span style="color:#6b5b45; font-size:0.85em;">(${ing.contact})</span>` : ''}</li>`
+                `<li>${ing.nom}${ing.contact ? ` <span style="color:var(--encre-doux); font-size:0.85em;">(${ing.contact})</span>` : ''}</li>`
             ).join('');
             const idSafe = 'msg-' + four.replace(/[^a-zA-Z0-9]/g, '');
             bloc.innerHTML = `
-                <strong style="color:#7a4a1f;">${four}</strong><ul style="margin:6px 0 8px 18px;">${items}</ul>
+                <strong style="color:var(--accent);">${four}</strong><ul style="margin:6px 0 8px 18px;">${items}</ul>
                 <button class="btn-tri" onclick="genererMessageFournisseur('${four.replace(/'/g, "\\'")}', '${idSafe}')">📤 Générer le message</button>
                 <div id="${idSafe}" style="display:none; margin-top:8px;"></div>
             `;
@@ -1047,9 +1057,9 @@
         const el = document.getElementById('dashStockBas');
         if (!el) return;
         if (!enRupture || enRupture.length === 0) {
-            el.innerHTML = '<p style="color:#27ae60; font-weight:bold; font-size:0.9rem;">✅ Aucune alerte — tous les stocks sont bons.</p>';
+            el.innerHTML = '<p style="color:var(--ok); font-weight:bold; font-size:0.9rem;">✅ Aucune alerte — tous les stocks sont bons.</p>';
         } else {
-            el.innerHTML = `<p style="color:#c0392b; font-weight:bold; font-size:0.95rem;">⚠️ ${enRupture.length} ingrédient(s) en stock bas : ${enRupture.map(i => i.nom).join(', ')}</p>`;
+            el.innerHTML = `<p style="color:var(--alerte); font-weight:bold; font-size:0.95rem;">⚠️ ${enRupture.length} ingrédient(s) en stock bas : ${enRupture.map(i => i.nom).join(', ')}</p>`;
         }
     }
 
@@ -1076,12 +1086,12 @@
             if (!items || items.length === 0) return;
             items.sort((a, b) => a.nom.localeCompare(b.nom));
             html += `<div style="margin-bottom:14px;">
-                <div style="font-weight:bold; color:#7a4a1f; font-size:0.95rem; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">${cat}</div>
-                ${items.map(i => `<div style="display:flex; justify-content:space-between; align-items:baseline; padding:6px 0; border-bottom:1px solid #f0e6d2; font-size:1.1rem;"><span>${i.nom}${i.qteB > 0 ? ` <span style="color:#2f4858; font-size:0.75em;">(dont ${i.qteB} en ligne)</span>` : ''}</span><span style="font-weight:bold; color:#7a4a1f; font-size:1.35rem; font-variant-numeric:tabular-nums;">${i.qte}</span></div>`).join('')}
+                <div style="font-weight:bold; color:var(--accent); font-size:0.95rem; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">${cat}</div>
+                ${items.map(i => `<div style="display:flex; justify-content:space-between; align-items:baseline; padding:6px 0; border-bottom:1px solid var(--creme); font-size:1.1rem;"><span>${i.nom}${i.qteB > 0 ? ` <span style="color:#2f4858; font-size:0.75em;">(dont ${i.qteB} en ligne)</span>` : ''}</span><span style="font-weight:bold; color:var(--accent); font-size:1.35rem; font-variant-numeric:tabular-nums;">${i.qte}</span></div>`).join('')}
             </div>`;
         });
 
-        conteneur.innerHTML = html || '<p style="color:#8a7860; font-size:0.85em;">Aucune commande pour l\'instant.</p>';
+        conteneur.innerHTML = html || '<p style="color:var(--encre-doux); font-size:0.85em;">Aucune commande pour l\'instant.</p>';
 
         const rappel = document.getElementById('rappelBoutique');
         if (rappel) {
@@ -1094,7 +1104,7 @@
             rappel.innerHTML = dateBoutique
                 ? `🛒 Livraison du ${dateBoutique} — ${totalBout} article(s) commandé(s) en ligne` +
                   (nbAbonnements ? ` <span style="color:#2f4858;">· dont ${nbAbonnements} abonnement(s)</span>` : '') +
-                  (orphelins.length ? `<br><span style="color:#c0392b; font-weight:bold;">⚠️ Non rattaché(s) à une fiche : ${
+                  (orphelins.length ? `<br><span style="color:var(--alerte); font-weight:bold;">⚠️ Non rattaché(s) à une fiche : ${
                       orphelins.map(k => (nomsBoutique[k] || k) + ' (' + k + ')').join(', ')}</span>` : '')
                 : "🛒 Aucune commande en ligne pour la prochaine livraison";
         }
@@ -1123,13 +1133,13 @@
         const corps = document.getElementById('corpsHistorique');
         if (!corps) return;
         if (!db) {
-            corps.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#8a7860;">Firebase indisponible</td></tr>';
+            corps.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--encre-doux);">Firebase indisponible</td></tr>';
             return;
         }
         db.collection("historique").orderBy("date", "desc").limit(30).get()
             .then((snapshot) => {
                 if (snapshot.empty) {
-                    corps.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#8a7860;">Aucun historique pour l\'instant — clique sur "Confirmer la production du jour" (onglet Commandes) pour commencer.</td></tr>';
+                    corps.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--encre-doux);">Aucun historique pour l\'instant — clique sur "Confirmer la production du jour" (onglet Commandes) pour commencer.</td></tr>';
                     return;
                 }
                 corps.innerHTML = '';
@@ -1146,7 +1156,7 @@
                     corps.appendChild(tr);
                 });
             })
-            .catch((err) => { corps.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#c0392b;">Erreur : ' + err.message + '</td></tr>'; });
+            .catch((err) => { corps.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--alerte);">Erreur : ' + err.message + '</td></tr>'; });
     }
 
     /* ==========================================================
@@ -1316,14 +1326,14 @@
         db.collection("backups").orderBy("horodatage", "desc").limit(30).get()
             .then((snapshot) => {
                 if (snapshot.empty) {
-                    conteneur.innerHTML = '<p style="color:#8a7860; font-size:0.85em;">Aucune sauvegarde disponible pour l\'instant.</p>';
+                    conteneur.innerHTML = '<p style="color:var(--encre-doux); font-size:0.85em;">Aucune sauvegarde disponible pour l\'instant.</p>';
                     return;
                 }
                 conteneur.innerHTML = '';
                 snapshot.forEach((doc) => {
                     const data = doc.data();
                     const ligne = document.createElement('div');
-                    ligne.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:#faf5ed; border-radius:6px; margin-bottom:4px; font-size:0.85em;';
+                    ligne.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:var(--creme); border-radius:6px; margin-bottom:4px; font-size:0.85em;';
                     ligne.innerHTML = `
                         <span>${doc.id} — ${(data.ingredients || []).length} ingrédient(s), ${(data.fiches || []).length} fiche(s)</span>
                         <button class="btn-tri" onclick="restaurerBackup('${doc.id}')">Restaurer</button>
@@ -1459,7 +1469,7 @@
         const edition = estEnEdition('couts');
 
         if (fichesTechniques.length === 0) {
-            conteneur.innerHTML = '<p style="color:#8a7860; font-size:0.85em;">Aucune fiche technique pour l\'instant.</p>';
+            conteneur.innerHTML = '<p style="color:var(--encre-doux); font-size:0.85em;">Aucune fiche technique pour l\'instant.</p>';
             majIndicateursMode();
             return;
         }
@@ -1504,7 +1514,7 @@
         const entete = document.createElement('div');
         entete.className = 'fiche-entete';
         entete.innerHTML = `
-            <span class="fiche-titre">${ouvert ? '▾' : '▸'} ${prod.id ? `<code style="background:#efe0c8; color:#7a4a1f; padding:1px 6px; border-radius:3px; font-size:0.8em;">${prod.id}</code> ` : '<span style="color:#c0392b; font-size:0.75em;">[sans code] </span>'}${prod.nom}${!prod.vendable ? ' <span style="font-weight:normal; color:#8a7860; font-size:0.8em;">base</span>' : ''}</span>
+            <span class="fiche-titre">${ouvert ? '▾' : '▸'} ${prod.id ? `<code style="background:var(--creme); color:var(--accent); padding:1px 6px; border-radius:3px; font-size:0.8em;">${prod.id}</code> ` : '<span style="color:var(--alerte); font-size:0.75em;">[sans code] </span>'}${prod.nom}${!prod.vendable ? ' <span style="font-weight:normal; color:var(--encre-doux); font-size:0.8em;">base</span>' : ''}</span>
             <span class="fiche-meta">${resume}</span>`;
         entete.onclick = () => toggleFiche(prod.nom);
         ligne.appendChild(entete);
@@ -1523,8 +1533,8 @@
     function construireDetailFicheLecture(prod, cout) {
         const lignes = (prod.ingredients || []).map(ing => {
             const label = ing.type === 'composite'
-                ? `${ing.nom} <span style="color:#8a7860; font-size:0.85em;">(base)</span>`
-                : ing.nom + (ing.farine ? ' <span style="color:#8a7860; font-size:0.85em;">(farine)</span>' : '');
+                ? `${ing.nom} <span style="color:var(--encre-doux); font-size:0.85em;">(base)</span>`
+                : ing.nom + (ing.farine ? ' <span style="color:var(--encre-doux); font-size:0.85em;">(farine)</span>' : '');
             return `<tr><td>${label}</td><td style="text-align:right; white-space:nowrap;">${(ing.qte || 0).toLocaleString('fr-FR')} g</td></tr>`;
         }).join('');
 
@@ -1534,12 +1544,12 @@
 
         return `
             <table class="table-lecture" style="margin-top:10px;">
-              <tbody>${lignes || '<tr><td style="color:#8a7860;">Aucun ingrédient renseigné.</td></tr>'}</tbody>
+              <tbody>${lignes || '<tr><td style="color:var(--encre-doux);">Aucun ingrédient renseigné.</td></tr>'}</tbody>
             </table>
-            <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; font-size:0.8rem; color:#6b5b45; margin-top:10px;">
+            <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; font-size:0.8rem; color:var(--encre-doux); margin-top:10px;">
               <span>${infoPieces}</span>
               <span>Poids total : ${cout.poidsTotal.toFixed(0)} g</span>
-              <span style="font-weight:bold; color:#7a4a1f;">Coût recette : ₱ ${cout.total.toFixed(2)}</span>
+              <span style="font-weight:bold; color:var(--accent);">Coût recette : ₱ ${cout.total.toFixed(2)}</span>
             </div>`;
     }
 
@@ -1596,7 +1606,7 @@
             </select>
             ${prod.modeSaisie === 'poids'
                 ? `<label style="font-size:0.85em;">Poids/pièce (g): <input type="number" min="1" style="width:70px; display:inline-block;" value="${prod.poidsPiece}" onchange="modifierFichePoidsPiece(${pIdx}, parseFloat(this.value)||0)"></label>
-                   <span style="font-size:0.85em; color:#7a4a1f; font-weight:bold;">→ ${prod.nbPieces.toFixed(1)} pièce(s)</span>`
+                   <span style="font-size:0.85em; color:var(--accent); font-weight:bold;">→ ${prod.nbPieces.toFixed(1)} pièce(s)</span>`
                 : `<label style="font-size:0.85em;">Pièces: <input type="number" min="1" style="width:70px; display:inline-block;" value="${prod.nbPieces}" onchange="modifierFicheNbPieces(${pIdx}, parseInt(this.value)||1)"></label>`
             }
         `;
@@ -1621,13 +1631,13 @@
                 <tbody>${lignesHTML}</tbody>
               </table>
             </div>
-            <button class="btn" style="background:#efe0c8; color:#7a4a1f; border:1px solid #7a4a1f; font-size:0.85em; padding:6px 10px;" onclick="ajouterIngredFiche(${pIdx})">+ Ajouter un ingrédient</button>
+            <button class="btn" style="background:var(--creme); color:var(--accent); border:1px solid var(--accent); font-size:0.85em; padding:6px 10px;" onclick="ajouterIngredFiche(${pIdx})">+ Ajouter un ingrédient</button>
 
             <div style="display:flex; justify-content:space-between; font-weight:bold; margin-top:8px; font-size:0.9em; flex-wrap:wrap; gap:6px;">
                 <span>Coût total recette : ₱ ${cout.total.toFixed(2)}</span>
                 ${prod.vendable
-                    ? `<span>Coût matière / pièce : <span style="background:#e8f8f5; color:#27ae60; padding:4px 8px; border-radius:4px;">₱ ${cout.coutUnitaire.toFixed(2)}</span></span>`
-                    : `<span>Poids total : ${cout.poidsTotal.toFixed(0)} g — Coût / g : <span style="background:#e8f8f5; color:#27ae60; padding:4px 8px; border-radius:4px;">₱ ${cout.coutParGramme.toFixed(4)}</span></span>`
+                    ? `<span>Coût matière / pièce : <span style="background:#e8f8f5; color:var(--ok); padding:4px 8px; border-radius:4px;">₱ ${cout.coutUnitaire.toFixed(2)}</span></span>`
+                    : `<span>Poids total : ${cout.poidsTotal.toFixed(0)} g — Coût / g : <span style="background:#e8f8f5; color:var(--ok); padding:4px 8px; border-radius:4px;">₱ ${cout.coutParGramme.toFixed(4)}</span></span>`
                 }
             </div>
         `;
@@ -1963,7 +1973,7 @@
         if (!pesees) {
             poser('#b05a2f');
             el.innerHTML = `
-                <h2 style="color:#7a4a1f; margin-bottom:4px; font-size:1.1rem;">⚖️ Pesées</h2>
+                <h2 style="color:var(--accent); margin-bottom:4px; font-size:1.1rem;">⚖️ Pesées</h2>
                 <p class="sous-titre">Le tableau ci-dessous vaut pour une seule pesée. Clique quand la balance est passée : ce qui arrivera ensuite s'affichera comme supplément, sans toucher à ce que tu as déjà pesé.</p>
                 <button class="btn" onclick="figerPesees()">⚖️ Pesées faites</button>`;
             return;
@@ -1972,10 +1982,10 @@
         const heure = new Date(pesees.horodatage).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
         const suppPains = fichesPains().reduce((t, f) => t + qteSupplement(f), 0);
         const aFaire = suppPains > 0;
-        poser(aFaire ? '#c0392b' : '#2e7d32');
+        poser(aFaire ? 'var(--alerte)' : 'var(--ok)');
 
         el.innerHTML = `
-            <h2 style="color:${aFaire ? '#c0392b' : '#2e7d32'}; margin-bottom:4px; font-size:1.1rem;">⚖️ Pesées faites à ${heure}</h2>
+            <h2 style="color:${aFaire ? 'var(--alerte)' : 'var(--ok)'}; margin-bottom:4px; font-size:1.1rem;">⚖️ Pesées faites à ${heure}</h2>
             <p class="sous-titre">${aFaire
                 ? `<strong style="color:#b05a2f;">${suppPains} pièce(s) en Tardif</strong> — voir le détail dans chaque onglet.`
                 : "Rien en Tardif pour l'instant. Ce que tu ajoutes là s'affichera ici automatiquement."}</p>
@@ -2012,7 +2022,7 @@
         // --- Grille des quantités normales (= mêmes données que l'onglet Commandes) ---
         const grille = document.getElementById('grilleQuantitesPains');
         if (fiches.length === 0) {
-            grille.innerHTML = '<p style="color:#8a7860; font-size:0.85em;">Aucune fiche technique en catégorie "Pains" pour l\'instant — ajoutes-en dans l\'onglet Coûts.</p>';
+            grille.innerHTML = '<p style="color:var(--encre-doux); font-size:0.85em;">Aucune fiche technique en catégorie "Pains" pour l\'instant — ajoutes-en dans l\'onglet Coûts.</p>';
         } else {
             grille.innerHTML = '';
             fiches.forEach(f => {
@@ -2033,7 +2043,7 @@
                                    font-size:1.4em; font-weight:bold; padding:8px; cursor:pointer;
                                    border:1px solid transparent;
                                    background:${aFaire ? '#fdecea' : (val > 0 ? '#e8f0f4' : '#f5f0e6')};
-                                   color:${aFaire ? '#c0392b' : (val > 0 ? '#2f4858' : '#a89a86')};
+                                   color:${aFaire ? 'var(--alerte)' : (val > 0 ? '#2f4858' : '#a89a86')};
                                    border-radius:6px;"
                             title="Voir la recette">${val}</button>`;
                 div.querySelector('.case-pain').onclick = () => ouvrirRecette(f.nom);
@@ -2158,7 +2168,7 @@
             : `Commandes boutique : ${qteBoutique(fiche)} · Ajouts : ${quantitesCommandes[fiche.nom] || 0} · <strong>À peser : ${qte}</strong>`;
 
         div.innerHTML = `
-            <h2 style="color:#7a4a1f; margin-bottom:10px;">${fiche.nom}</h2>
+            <h2 style="color:var(--accent); margin-bottom:10px;">${fiche.nom}</h2>
             <table>
                 <thead><tr><th>Ingrédient</th><th>Quantité à peser</th></tr></thead>
                 <tbody>${lignes}</tbody>
@@ -2226,7 +2236,7 @@
         });
 
         if (noms.length === 0) {
-            conteneur.innerHTML = '<p style="color:#8a7860; font-size:0.85em;">Aucune Recette de Base n\'est encore référencée (ajoute des lignes "Composite" dans tes fiches, onglet Coûts).</p>';
+            conteneur.innerHTML = '<p style="color:var(--encre-doux); font-size:0.85em;">Aucune Recette de Base n\'est encore référencée (ajoute des lignes "Composite" dans tes fiches, onglet Coûts).</p>';
             return;
         }
 
@@ -2241,7 +2251,7 @@
 
             // Le Levain n'affiche que le total, en gros — pas de détail de sous-recette.
             if (estLevain) {
-                bloc.style.cssText = 'margin-bottom:18px; padding:14px; background:#7a4a1f; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.15);';
+                bloc.style.cssText = 'margin-bottom:18px; padding:14px; background:var(--accent); border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.15);';
                 bloc.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:center; font-weight:bold; color:#fff;">
                         <span style="font-size:1.5rem;">🌾 ${nomBase}</span>
@@ -2253,7 +2263,7 @@
                 return;
             }
 
-            bloc.style.cssText = 'margin-bottom:15px; padding:10px; background:#f0e6d2; border-radius:8px;';
+            bloc.style.cssText = 'margin-bottom:15px; padding:10px; background:var(--creme); border-radius:8px;';
 
             let detailHTML;
             if (ficheBase) {
@@ -2276,7 +2286,7 @@
                     <div class="info-hydratation">💧 Taux d'hydratation : ${hydratationBase.toFixed(1).replace('.', ',')}%</div>
                 `;
             } else {
-                detailHTML = `<p style="color:#c0392b; font-size:0.85em; margin-top:8px;">⚠️ Aucune fiche "Recette de Base" nommée "${nomBase}" trouvée — vérifie l'onglet Coûts.</p>`;
+                detailHTML = `<p style="color:var(--alerte); font-size:0.85em; margin-top:8px;">⚠️ Aucune fiche "Recette de Base" nommée "${nomBase}" trouvée — vérifie l'onglet Coûts.</p>`;
             }
 
             bloc.innerHTML = `
@@ -2548,7 +2558,7 @@
         }
 
         if (liste.length === 0) {
-            conteneur.innerHTML = '<p style="color:#8a7860; font-size:0.85em;">Aucune fiche technique vendable pour l\'instant — ajoutes-en dans l\'onglet Coûts.</p>';
+            conteneur.innerHTML = '<p style="color:var(--encre-doux); font-size:0.85em;">Aucune fiche technique vendable pour l\'instant — ajoutes-en dans l\'onglet Coûts.</p>';
         }
 
         let totalPcs = 0, totalCoutMatiere = 0, totalCA = 0;
@@ -2595,8 +2605,8 @@
                 <span class="product-name-cmd">${prod.nom}</span>
                 <div style="display:flex; gap:10px; align-items:center; font-size:0.8rem; flex-wrap:wrap;">
                     <span style="background:#e8f0f4; color:#2f4858; padding:2px 8px; border-radius:4px; font-weight:bold;">Boutique : ${qteBout}</span>
-                    <span style="color:#8a7860;">Ajouts</span>
-                    <span style="color:#7a4a1f; font-weight:bold;">Total : ${qte}</span>
+                    <span style="color:var(--encre-doux);">Ajouts</span>
+                    <span style="color:var(--accent); font-weight:bold;">Total : ${qte}</span>
                 </div>
                 <div class="counter-group">
                     <button class="btn-counter" onclick="changerQteCommande('${prod.nom.replace(/'/g, "\\'")}', -1)">-</button>
@@ -2617,7 +2627,7 @@
                     <span>Vente: ₱ ${infoPrix.source === 'boutique'
                         ? `<b>${prixVente}</b> <span title="Prix défini dans la boutique en ligne — modifiez-le là-bas." style="background:#e8f0f4; color:#2f4858; padding:1px 6px; border-radius:4px; font-size:0.75em;">boutique</span>`
                         : `<input type="number" class="price-input-cmd" value="${prixVente}" step="0.5" onchange="changerPrixVenteCommande('${prod.nom.replace(/'/g, "\\'")}', parseFloat(this.value)||0)">`}</span>
-                    <span style="color:${margeU < 0 ? '#a8322a' : '#5f7a52'}; font-weight:bold;">
+                    <span style="color:${margeU < 0 ? 'var(--alerte)' : '#5f7a52'}; font-weight:bold;">
                         Marge: ${formatPeso(margeU)}${prixVente > 0 ? ` · ${tauxU.toFixed(0)} %` : ''}</span>
                 </div>
             `;
