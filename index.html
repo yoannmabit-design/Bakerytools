@@ -1586,7 +1586,7 @@
         const cout = calculerCoutFiche(prod);
         const resume = prod.vendable
             ? `₱ ${cout.coutUnitaire.toFixed(2)} / pièce`
-            : `₱ ${cout.coutParGramme.toFixed(4)} / g`;
+            : `₱ ${(cout.coutParGramme * 1000).toFixed(2)} / kg`;
 
         const entete = document.createElement('div');
         entete.className = 'fiche-entete';
@@ -1717,7 +1717,7 @@
                 <span>Coût total recette : ₱ ${cout.total.toFixed(2)}</span>
                 ${prod.vendable
                     ? `<span>Coût matière / pièce : <span style="background:#e8f8f5; color:var(--ok); padding:4px 8px; border-radius:4px;">₱ ${cout.coutUnitaire.toFixed(2)}</span></span>`
-                    : `<span>Poids total : ${cout.poidsTotal.toFixed(0)} g — Coût / g : <span style="background:#e8f8f5; color:var(--ok); padding:4px 8px; border-radius:4px;">₱ ${cout.coutParGramme.toFixed(4)}</span></span>`
+                    : `<span>Poids total : ${cout.poidsTotal.toFixed(0)} g — Coût / kg : <span style="background:#e8f8f5; color:var(--ok); padding:4px 8px; border-radius:4px;">₱ ${(cout.coutParGramme * 1000).toFixed(2)}</span></span>`
                 }
             </div>
         `;
