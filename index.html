@@ -2179,7 +2179,7 @@
             const btn = document.createElement('button');
             btn.className = 'onglet-btn' + (f.nom === ongletActifPains ? ' actif' : '');
             btn.textContent = f.nom;
-            btn.onclick = () => { ongletActifPains = f.nom; afficherRecettesPains(); };
+            btn.onclick = () => ouvrirRecette(f.nom);
             conteneurOnglets.appendChild(btn);
         });
 
