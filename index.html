@@ -167,9 +167,9 @@
     /* Cases de la grille Commandes boutique : cliquables vers la recette. */
     .case-pain:hover { border-color: var(--accent) !important; }
     .case-pain:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-    .onglets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 15px; max-width: 900px; }
-    .onglet-btn { background: var(--creme); border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 1em; color: var(--accent); font-weight: bold; }
-    .onglet-btn.actif { background: var(--accent); color: #fff; }
+    .onglets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; max-width: 900px; padding: 10px; background: var(--papier); border: 1px solid var(--trait); border-radius: 10px; }
+    .onglet-btn { background: var(--creme); border: 1px solid var(--trait); padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 1em; color: var(--accent); font-weight: bold; }
+    .onglet-btn.actif { background: var(--accent); border-color: var(--accent); color: #fff; }
     .qte-cell { font-weight: bold; background: var(--creme) !important; }
     .info-hydratation, .info-nb { margin-top: 10px; font-size: 1.05em; color: var(--encre-doux); }
     .supplement-tardif { margin-top: 20px; padding-top: 15px; border-top: 2px dashed #b05a2f; }
@@ -341,10 +341,6 @@
         <div id="syntheseBases"></div>
       </div>
 
-      <!-- Cible du défilement depuis la grille Commandes boutique : on arrive
-           juste au-dessus des onglets, pas sur la recette elle-même, pour voir
-           quel pain est sélectionné. -->
-      <div id="ancreOnglets" style="scroll-margin-top:12px"></div>
       <div class="onglets" id="ongletsPains"></div>
       <div id="contenuOngletsPains"></div>
     </section>
@@ -888,6 +884,13 @@
                 <td style="text-align:right; white-space:nowrap;"><strong>${(item.prix || 0).toLocaleString('fr-FR')}</strong> <span style="color:var(--encre-doux); font-size:0.85em;">${unite}</span></td>
                 <td style="color:var(--encre-doux);">${item.fournisseur || '—'}</td>
                 <td style="text-align:right; white-space:nowrap; color:${stock < 0 ? 'var(--alerte)' : 'var(--encre)'};">${stock.toLocaleString('fr-FR', { maximumFractionDigits: 2 })} ${item.type === 'kg' ? 'kg' : 'u.'}</td>
+                <td style="text-align:center; white-space:nowrap;">
+                    <input type="number" step="0.01" min="0" value="${item.seuilBas || ''}" placeholder="—"
+                           style="width:55px; padding:4px; font-size:0.95rem; text-align:center; border:1px solid var(--trait); border-radius:4px;"
+                           onchange="modifierSeuilBas(${index}, this.value)"
+                           title="Seuil déclenchant l'alerte automatiquement — laisse vide pour rester en manuel">
+                    <span style="font-size:0.75em; color:var(--encre-doux);">${item.type === 'kg' ? 'kg' : 'u.'}</span>
+                </td>
                 <td style="text-align:center;"><input type="checkbox" style="width:auto; cursor:${seuil > 0 ? 'default' : 'pointer'};" ${bas ? 'checked' : ''} ${seuil > 0 ? 'disabled' : ''} onchange="toggleStockBas(${index}, this.checked)" title="${infoBulle}"></td>
             </tr>`;
         }).join('');
@@ -897,7 +900,7 @@
         el.innerHTML = `
             <div style="overflow-x:auto;">
               <table class="table-lecture">
-                <thead><tr><th>Ingrédient</th><th style="text-align:right;">Prix</th><th>Fournisseur</th><th style="text-align:right;">Stock</th><th style="text-align:center;">Alerte</th></tr></thead>
+                <thead><tr><th>Ingrédient</th><th style="text-align:right;">Prix</th><th>Fournisseur</th><th style="text-align:right;">Stock</th><th style="text-align:center;">Seuil bas</th><th style="text-align:center;">Alerte</th></tr></thead>
                 <tbody>${lignes}</tbody>
               </table>
             </div>
@@ -962,6 +965,16 @@
     function toggleStockBas(index, valeur) {
         listeIngredients[index].stockBas = valeur;
         if (!estEnEdition('ingredients')) construireVueLectureIngredients(); // met à jour la coche et le compteur
+        afficherListeReappro();
+        if (db) sauvegarderCloud(true);
+    }
+
+    // Même logique que toggleStockBas : modifiable depuis la consultation,
+    // enregistré aussitôt — pas besoin de passer en mode édition pour un
+    // réglage aussi ponctuel.
+    function modifierSeuilBas(index, valeur) {
+        listeIngredients[index].seuilBas = parseFloat(valeur) || 0;
+        if (!estEnEdition('ingredients')) construireVueLectureIngredients();
         afficherListeReappro();
         if (db) sauvegarderCloud(true);
     }
@@ -2079,7 +2092,7 @@
     function ouvrirRecette(nom) {
         ongletActifPains = nom;
         afficherRecettesPains();
-        const ancre = document.getElementById('ancreOnglets');
+        const ancre = document.getElementById('ancreDetailPain');
         if (ancre) ancre.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
@@ -2131,7 +2144,13 @@
             const val = quantitesCommandes[f.nom] || 0;
             const div = document.createElement('div');
             div.className = 'champ-qte';
-            div.innerHTML = `<label>${f.nom}</label><input type="number" step="1" value="${val}" ${pesees ? 'disabled' : ''} onchange="modifierQtePain('${f.nom.replace(/'/g, "\\'")}', parseFloat(this.value)||0)">`;
+            const nomEch = f.nom.replace(/'/g, "\\'");
+            div.innerHTML = `<label>${f.nom}</label>
+                <div class="counter-group">
+                    <button type="button" class="btn-counter" ${pesees ? 'disabled' : ''} onclick="modifierQtePain('${nomEch}', ${val} - 1)">-</button>
+                    <input type="number" class="counter-value" step="1" value="${val}" ${pesees ? 'disabled' : ''} onchange="modifierQtePain('${nomEch}', parseFloat(this.value)||0)">
+                    <button type="button" class="btn-counter" ${pesees ? 'disabled' : ''} onclick="modifierQtePain('${nomEch}', ${val} + 1)">+</button>
+                </div>`;
             grilleA.appendChild(div);
         });
         const btnReset = document.getElementById('btnReinitialiserAjouts');
@@ -2235,6 +2254,7 @@
             : `Commandes boutique : ${qteBoutique(fiche)} · Ajouts : ${quantitesCommandes[fiche.nom] || 0} · <strong>À peser : ${qte}</strong>`;
 
         div.innerHTML = `
+            <div id="ancreDetailPain" style="scroll-margin-top:12px"></div>
             <h2 style="color:var(--accent); margin-bottom:10px;">${fiche.nom}</h2>
             <table>
                 <thead><tr><th>Ingrédient</th><th>Quantité à peser</th></tr></thead>
