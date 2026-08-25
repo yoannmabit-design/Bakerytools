@@ -2912,7 +2912,9 @@
     }
     function sauverQtesMarche(qtesParId) {
         const q = dernieresQtesMarche();
-        Object.assign(q, qtesParId);
+        Object.keys(qtesParId).forEach(id => {
+            q[id] = Object.assign({}, q[id], qtesParId[id]);
+        });
         try { localStorage.setItem('bakery-marche-qte', JSON.stringify(q)); } catch (e) {}
     }
 
@@ -2944,13 +2946,15 @@
                 <span style="flex:1; min-width:140px;">${p.nom}</span>
                 <span style="font-size:0.85rem; color:var(--encre-doux);">Stock : ${stockBoutique[p.id] ?? 0}</span>
                 <label style="display:flex; align-items:center; gap:4px; font-size:0.8rem; color:#16a34a;">➕
-                    <input type="number" min="0" step="1" data-marche-id="${p.id}" data-marche-type="fab" placeholder="0"
-                           value="${(qtes[p.id] && qtes[p.id].fab) || ''}"
+                    <input type="number" min="0" step="1" data-marche-id="${p.id}" data-marche-type="fab"
+                           placeholder="${(qtes[p.id] && qtes[p.id].fab) || '0'}" value=""
                            style="width:60px; padding:6px 8px; border:1px solid var(--trait); border-radius:6px; text-align:center; font-size:1rem;">
                 </label>
                 <label style="display:flex; align-items:center; gap:4px; font-size:0.8rem; color:var(--alerte);">🛒
-                    <input type="number" min="0" step="1" data-marche-id="${p.id}" data-marche-type="sortie" placeholder="0"
-                           value="${(qtes[p.id] && qtes[p.id].sortie) || ''}"
+                    <input type="number" min="0" step="1" data-marche-id="${p.id}" data-marche-type="sortie"
+                           placeholder="${(qtes[p.id] && qtes[p.id].sortie) || '0'}" value=""
+                           onclick="if(!this.value && this.placeholder !== '0') this.value = this.placeholder"
+                           title="Clique pour reprendre la quantité de la semaine dernière"
                            style="width:60px; padding:6px 8px; border:1px solid var(--trait); border-radius:6px; text-align:center; font-size:1rem;">
                 </label>
             </div>`).join('');
@@ -3025,9 +3029,11 @@
 
             const qtesASauver = {};
             document.querySelectorAll('#listeMarche input[data-marche-id]').forEach(champ => {
+                const qte = parseInt(champ.value, 10) || 0;
+                if (!champ.value.trim() || qte <= 0) return; // champ non touché : on ne touche pas non plus à son souvenir
                 const id = champ.dataset.marcheId;
                 qtesASauver[id] = qtesASauver[id] || {};
-                qtesASauver[id][champ.dataset.marcheType] = parseInt(champ.value, 10) || 0;
+                qtesASauver[id][champ.dataset.marcheType] = qte;
             });
             sauverQtesMarche(qtesASauver);
             document.getElementById('panneauMarche').hidden = true;
