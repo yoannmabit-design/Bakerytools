@@ -2874,23 +2874,43 @@
         // produit se compensent (+3 fabriqués, -2 sortis = +1 net), pas
         // deux écritures qui se marchent dessus.
         const parProduit = {};
+        const parProduitFab = {};   // pour la déduction d'ingrédients — uniquement la colonne Fabrication
         document.querySelectorAll('#listeMarche input[data-marche-id]').forEach(champ => {
             const qte = parseInt(champ.value, 10) || 0;
             if (qte <= 0) return;
             const id = champ.dataset.marcheId;
             const signe = champ.dataset.marcheType === 'fab' ? 1 : -1;
             parProduit[id] = (parProduit[id] || 0) + signe * qte;
+            if (champ.dataset.marcheType === 'fab') parProduitFab[id] = (parProduitFab[id] || 0) + qte;
         });
 
         const idsActifs = Object.keys(parProduit).filter(id => parProduit[id] !== 0);
         if (idsActifs.length === 0) { alert("Aucune quantité saisie."); return; }
 
-        const recap = idsActifs.map(id => {
+        // Ingrédients consommés par la fabrication — la sortie marché n'en
+        // déduit pas d'autres : ils ont déjà été comptés ici, à la fabrication.
+        const accumulateur = {};
+        Object.keys(parProduitFab).forEach(id => {
+            const fiche = fichesTechniques.find(f => f.id === id);
+            if (fiche && fiche.nbPieces > 0) {
+                const facteur = parProduitFab[id] / fiche.nbPieces;
+                accumulerConsommationBrute(fiche, facteur, accumulateur, new Set());
+            }
+        });
+
+        const recapStock = idsActifs.map(id => {
             const p = produitsVendables().find(f => f.id === id);
             const delta = parProduit[id];
             return `  ${p ? p.nom : id} : ${delta > 0 ? '+' : ''}${delta}`;
         }).join('\n');
-        if (!confirm("Appliquer au stock :\n\n" + recap + "\n\nConfirmer ?")) return;
+        const recapIngredients = Object.keys(accumulateur).length
+            ? '\n\nIngrédients déduits pour la fabrication :\n' + Object.keys(accumulateur).map(nom => {
+                const ing = listeIngredients.find(i => i.nom.trim().toLowerCase() === nom.trim().toLowerCase());
+                const uniteFinale = ing && ing.type === 'kg' ? (accumulateur[nom] / 1000).toFixed(2) + ' kg' : accumulateur[nom].toFixed(1) + ' unité(s)';
+                return `  • ${nom} : ${uniteFinale}${!ing ? ' ⚠️ introuvable' : ''}`;
+              }).join('\n')
+            : '';
+        if (!confirm("Stock :\n\n" + recapStock + recapIngredients + "\n\nConfirmer ?")) return;
 
         try {
             await Promise.all(idsActifs.map(id =>
@@ -2898,6 +2918,20 @@
                     stock: firebase.firestore.FieldValue.increment(parProduit[id])
                 })
             ));
+
+            // Déduction des ingrédients, même mécanisme que la production du jour.
+            Object.keys(accumulateur).forEach(nom => {
+                const ing = listeIngredients.find(i => i.nom.trim().toLowerCase() === nom.trim().toLowerCase());
+                if (ing) {
+                    const aDeduire = ing.type === 'kg' ? accumulateur[nom] / 1000 : accumulateur[nom];
+                    ing.stockActuel = (ing.stockActuel || 0) - aDeduire;
+                }
+            });
+            if (Object.keys(accumulateur).length && db) {
+                sauvegarderCloud(true);
+                afficherTableauIngredients();
+            }
+
             const qtesASauver = {};
             document.querySelectorAll('#listeMarche input[data-marche-id]').forEach(champ => {
                 const id = champ.dataset.marcheId;
@@ -2944,8 +2978,14 @@
             return;
         }
 
+        // Seul le pain (illimité) passe par ici pour les ingrédients : un
+        // produit à stock "limité" les fait déduire au moment de sa
+        // fabrication (panneau "📦 Mouvements de stock"), pas ici — sinon
+        // ses ingrédients compteraient deux fois.
+        const produitsPain = produits.filter(f => !f.id || modeStockBoutique[f.id] !== 'limite');
+
         const accumulateur = {}; // { nomIngredientBrut: quantité totale nécessaire, en grammes ou en unités }
-        produits.forEach(f => {
+        produitsPain.forEach(f => {
             const qte = qteBoutique(f) + (quantitesCommandes[f.nom] || 0);
             if (f.nbPieces > 0) {
                 const facteur = qte / f.nbPieces;
@@ -2954,15 +2994,17 @@
         });
 
         // Message de confirmation détaillé avant toute déduction (action irréversible sans re-saisie manuelle).
-        const recap = Object.keys(accumulateur).map(nom => {
-            const ing = listeIngredients.find(i => i.nom.trim().toLowerCase() === nom.trim().toLowerCase());
-            const uniteFinale = ing && ing.type === 'kg' ? (accumulateur[nom] / 1000).toFixed(2) + ' kg' : accumulateur[nom].toFixed(1) + ' unité(s)';
-            return `• ${nom} : ${uniteFinale}${!ing ? ' ⚠️ introuvable dans la base Ingrédients' : ''}`;
-        }).join('\n');
+        const recap = Object.keys(accumulateur).length
+            ? Object.keys(accumulateur).map(nom => {
+                const ing = listeIngredients.find(i => i.nom.trim().toLowerCase() === nom.trim().toLowerCase());
+                const uniteFinale = ing && ing.type === 'kg' ? (accumulateur[nom] / 1000).toFixed(2) + ' kg' : accumulateur[nom].toFixed(1) + ' unité(s)';
+                return `• ${nom} : ${uniteFinale}${!ing ? ' ⚠️ introuvable dans la base Ingrédients' : ''}`;
+              }).join('\n')
+            : '(aucun pain renseigné — rien à déduire ici)';
 
         const confirmation = confirm(
-            "Confirmer la production du jour ?\n\nCeci va déduire du stock d'ingrédients :\n" + recap +
-            "\n\nLe stock des produits finis n'est pas touché ici — utilise \"➕ Fabrication\" sur chaque produit après la fournée.\n\nCette action ne peut pas être annulée automatiquement."
+            "Confirmer la production du jour ?\n\nCeci va déduire du stock d'ingrédients pour le pain :\n" + recap +
+            "\n\nLes produits à stock limité (croissants, viennoiseries...) ne sont pas concernés ici — utilise \"📦 Mouvements de stock\" pour eux, qui déduit leurs ingrédients au moment de la fabrication.\n\nCette action ne peut pas être annulée automatiquement."
         );
         if (!confirmation) return;
 
