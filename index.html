@@ -1,4 +1,4 @@
-   <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -825,6 +825,7 @@
     ];
 
     let listeIngredients = [];
+    let joursFermes = []; // 0 = lundi — lu depuis parametres/boutique, même source que le reste de l'écosystème
     let filtreIngredients = '';
     let sensAlphabetique = true;
 
@@ -2106,6 +2107,35 @@
         alert("Ingrédients du tardif déduits.");
     }
 
+    // Même source que commandes-admin.html — lecture publique, pas besoin
+    // de connexion admin pour ça.
+    function chargerJoursFermes() {
+        if (!db) return;
+        db.collection("parametres").doc("boutique").get()
+            .then((snap) => { joursFermes = (snap.exists && snap.data().jours_fermes) || []; })
+            .catch((err) => console.log("Jours fermés non lus : " + err.message));
+    }
+
+    // Rappel, pas une action : ne déduit rien, ne coche rien — se contente
+    // de dire ce qui pourrait avoir été oublié. Une seule fois par jour,
+    // pour ne pas harceler à chaque passage sur l'onglet — et jamais un jour
+    // fermé, où il n'y a de toute façon rien à peser.
+    function verifierRappelPesee() {
+        if (new Date().getHours() < 5) return;
+        if (pesees) return; // déjà fait aujourd'hui
+        const aujourdhui = new Date();
+        if (joursFermes.includes((aujourdhui.getDay() + 6) % 7)) return;
+
+        const cle = 'bakery-rappel-pesee-' + dateDuJour();
+        try { if (localStorage.getItem(cle)) return; } catch (e) {}
+
+        const painsRemplis = fichesPains().some(f => totalPainActuel(f) > 0);
+        if (!painsRemplis) return;
+
+        try { localStorage.setItem(cle, '1'); } catch (e) {}
+        alert("⚖️ Rappel : des quantités de pain sont renseignées dans Commandes/Ajouts, mais la pesée n'a pas encore été confirmée aujourd'hui.");
+    }
+
     function annulerPesees() {
         if (!confirm("Reprendre les pesées ?\n\nLe tableau Tardif sera vidé et refondu dans le tableau principal — à ne faire que si tu n'as pas encore pesé.")) return;
         // Tardif redevient sans objet une fois qu'on retire le gel : ce
@@ -3127,11 +3157,17 @@
         chargerCommandes();
         chargerCommandesBoutique();
         chargerPrixBoutique();
+        chargerJoursFermes();
         chargerPrefsSansGluten();
         calculerSansGluten();
         chargerHistorique();
         // Laisse le temps aux données Firestore (ingrédients + fiches) de se charger avant de vérifier la sauvegarde du jour.
         setTimeout(verifierBackupAutomatique, 3000);
+        // Idem pour le rappel de pesée : les commandes/quantités doivent être arrivées d'abord.
+        setTimeout(verifierRappelPesee, 4000);
+        // Puis un contrôle toutes les 15 minutes, au cas où l'onglet reste ouvert
+        // et que 5h ou le remplissage des Ajouts arrive pendant ce temps.
+        setInterval(verifierRappelPesee, 15 * 60 * 1000);
     });
 
     if ('serviceWorker' in navigator) {
