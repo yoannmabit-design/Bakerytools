@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+   <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -297,7 +297,7 @@
 
       <div class="carte" style="max-width:900px;">
         <h2 style="color:var(--accent); margin-bottom:10px; font-size:1.1rem;">📈 Historique (30 derniers jours)</h2>
-        <p style="font-size:0.8rem; color:var(--encre-doux); margin-bottom:10px;">Un jour est ajouté à l'historique à chaque clic sur "Confirmer la production du jour" (onglet Commandes).</p>
+        <p style="font-size:0.8rem; color:var(--encre-doux); margin-bottom:10px;">Un jour est ajouté à l'historique à chaque clic sur "Clôturer la journée" (onglet Commandes).</p>
         <div style="overflow-x:auto;">
           <table>
             <thead><tr><th>Date</th><th>Pièces</th><th>C.A.</th><th>Marge</th><th>Taux</th></tr></thead>
@@ -333,6 +333,7 @@
         <h2 style="margin-bottom:10px; font-size:1.1rem;">⏱️ Tardif</h2>
         <p class="sous-titre">Ce qui arrive après la balance — à décider vous-même selon ce qu'il vous reste, par exemple en levain.</p>
         <div class="grille-quantites" id="grilleQuantitesTardif"></div>
+        <button class="btn" style="background:var(--accent); margin-top:10px;" onclick="deduireIngredientsTardif()">🌾 Pâte tardive faite — déduire ses ingrédients</button>
       </div>
 
       <div class="carte" id="syntheseBasesWrapper">
@@ -565,7 +566,7 @@
              oninput="filtreCommandesTab = this.value; afficherCommandes();"
              style="width:100%; box-sizing:border-box; padding:12px 14px; font-size:1.1rem; border:1px solid var(--trait); border-radius:var(--r); margin-bottom:10px; background:var(--papier); color:var(--encre);">
 
-      <button class="btn" style="background:#16a34a; font-size:1rem; padding:14px 20px; width:100%; max-width:900px; margin-bottom:15px; box-shadow:0 2px 8px rgba(22,163,74,0.3);" onclick="confirmerProductionDuJour()">✅ Confirmer la production du jour (déduit le stock matières premières)</button>
+      <button class="btn" style="background:#16a34a; font-size:1rem; padding:14px 20px; width:100%; max-width:900px; margin-bottom:15px; box-shadow:0 2px 8px rgba(22,163,74,0.3);" onclick="confirmerProductionDuJour()">✅ Clôturer la journée (historique CA/marge, remise à zéro)</button>
 
       <button class="btn" style="background:var(--accent); font-size:1rem; padding:12px 20px; width:100%; max-width:900px; margin-bottom:15px;" onclick="ouvrirPanneauMarche()">📦 Mouvements de stock</button>
 
@@ -1220,7 +1221,7 @@
         db.collection("historique").orderBy("date", "desc").limit(30).get()
             .then((snapshot) => {
                 if (snapshot.empty) {
-                    corps.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--encre-doux);">Aucun historique pour l\'instant — clique sur "Confirmer la production du jour" (onglet Commandes) pour commencer.</td></tr>';
+                    corps.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--encre-doux);">Aucun historique pour l\'instant — clique sur "Clôturer la journée" (onglet Commandes) pour commencer.</td></tr>';
                     return;
                 }
                 corps.innerHTML = '';
@@ -2039,10 +2040,70 @@
     function figerPesees() {
         const quantites = {};
         fichesPains().forEach(f => { quantites[f.nom] = totalPainActuel(f); });
+
+        // La pâte est réellement faite à cet instant : ses ingrédients se
+        // déduisent ici, sur la même quantité que ce qui vient d'être figé —
+        // plus besoin d'un second geste dans un autre onglet pour ça.
+        const accumulateur = {};
+        fichesPains().forEach(f => {
+            const qte = quantites[f.nom] || 0;
+            if (qte > 0 && f.nbPieces > 0) {
+                accumulerConsommationBrute(f, qte / f.nbPieces, accumulateur, new Set());
+            }
+        });
+        Object.keys(accumulateur).forEach(nom => {
+            const ing = listeIngredients.find(i => i.nom.trim().toLowerCase() === nom.trim().toLowerCase());
+            if (ing) {
+                const aDeduire = ing.type === 'kg' ? accumulateur[nom] / 1000 : accumulateur[nom];
+                ing.stockActuel = (ing.stockActuel || 0) - aDeduire;
+            }
+        });
+        if (Object.keys(accumulateur).length && db) {
+            sauvegarderCloud(true);
+            afficherTableauIngredients();
+        }
+
         pesees = { horodatage: new Date().toISOString(), quantites: quantites };
         sauvegarderCommandesCloud();
         afficherRecettesPains();
         if (typeof afficherCommandes === 'function') afficherCommandes();
+    }
+
+    // Le tardif est une pâte faite séparément, plus tard — un geste à part,
+    // délibéré, plutôt qu'une déduction automatique à chaque frappe pendant
+    // que les quantités tardives sont encore en train de se préciser.
+    function deduireIngredientsTardif() {
+        const produitsTardifs = fichesPains().filter(f => (quantitesTardif[f.nom] || 0) > 0);
+        if (produitsTardifs.length === 0) {
+            alert("Aucune quantité tardive renseignée pour l'instant.");
+            return;
+        }
+
+        const accumulateur = {};
+        produitsTardifs.forEach(f => {
+            const qte = quantitesTardif[f.nom] || 0;
+            if (f.nbPieces > 0) accumulerConsommationBrute(f, qte / f.nbPieces, accumulateur, new Set());
+        });
+
+        const recap = Object.keys(accumulateur).map(nom => {
+            const ing = listeIngredients.find(i => i.nom.trim().toLowerCase() === nom.trim().toLowerCase());
+            const uniteFinale = ing && ing.type === 'kg' ? (accumulateur[nom] / 1000).toFixed(2) + ' kg' : accumulateur[nom].toFixed(1) + ' unité(s)';
+            return `• ${nom} : ${uniteFinale}${!ing ? ' ⚠️ introuvable' : ''}`;
+        }).join('\n');
+        if (!confirm("Déduire les ingrédients de la pâte tardive ?\n\n" + recap)) return;
+
+        Object.keys(accumulateur).forEach(nom => {
+            const ing = listeIngredients.find(i => i.nom.trim().toLowerCase() === nom.trim().toLowerCase());
+            if (ing) {
+                const aDeduire = ing.type === 'kg' ? accumulateur[nom] / 1000 : accumulateur[nom];
+                ing.stockActuel = (ing.stockActuel || 0) - aDeduire;
+            }
+        });
+        if (db) {
+            sauvegarderCloud(true);
+            afficherTableauIngredients();
+        }
+        alert("Ingrédients du tardif déduits.");
     }
 
     function annulerPesees() {
@@ -2071,8 +2132,8 @@
             poser('#b05a2f');
             el.innerHTML = `
                 <h2 style="color:var(--accent); margin-bottom:4px; font-size:1.1rem;">⚖️ Pesées</h2>
-                <p class="sous-titre">Le tableau ci-dessous vaut pour une seule pesée. Clique quand la balance est passée : ce qui arrivera ensuite s'affichera comme supplément, sans toucher à ce que tu as déjà pesé.</p>
-                <button class="btn" onclick="figerPesees()">⚖️ Pesées faites</button>`;
+                <p class="sous-titre">Le tableau ci-dessous vaut pour une seule pesée. Clique quand la balance est passée : ce qui arrivera ensuite s'affichera comme supplément, sans toucher à ce que tu as déjà pesé. Ce clic déduit aussi les ingrédients du pain — la pâte est en train d'être faite.</p>
+                <button class="btn" onclick="figerPesees()">⚖️ Pâte pesée — déduire ses ingrédients</button>`;
             return;
         }
 
@@ -2978,44 +3039,15 @@
             return;
         }
 
-        // Seul le pain (illimité) passe par ici pour les ingrédients : un
-        // produit à stock "limité" les fait déduire au moment de sa
-        // fabrication (panneau "📦 Mouvements de stock"), pas ici — sinon
-        // ses ingrédients compteraient deux fois.
-        const produitsPain = produits.filter(f => !f.id || modeStockBoutique[f.id] !== 'limite');
-
-        const accumulateur = {}; // { nomIngredientBrut: quantité totale nécessaire, en grammes ou en unités }
-        produitsPain.forEach(f => {
-            const qte = qteBoutique(f) + (quantitesCommandes[f.nom] || 0);
-            if (f.nbPieces > 0) {
-                const facteur = qte / f.nbPieces;
-                accumulerConsommationBrute(f, facteur, accumulateur, new Set());
-            }
-        });
-
-        // Message de confirmation détaillé avant toute déduction (action irréversible sans re-saisie manuelle).
-        const recap = Object.keys(accumulateur).length
-            ? Object.keys(accumulateur).map(nom => {
-                const ing = listeIngredients.find(i => i.nom.trim().toLowerCase() === nom.trim().toLowerCase());
-                const uniteFinale = ing && ing.type === 'kg' ? (accumulateur[nom] / 1000).toFixed(2) + ' kg' : accumulateur[nom].toFixed(1) + ' unité(s)';
-                return `• ${nom} : ${uniteFinale}${!ing ? ' ⚠️ introuvable dans la base Ingrédients' : ''}`;
-              }).join('\n')
-            : '(aucun pain renseigné — rien à déduire ici)';
-
+        // Les ingrédients ne se déduisent plus ici : le pain les déduit à
+        // "Pâte pesée" (figerPesees) et au tardif (deduireIngredientsTardif),
+        // les produits à stock limité au moment de leur fabrication (panneau
+        // "📦 Mouvements de stock"). Cette confirmation ne s'occupe plus que
+        // de l'historique du jour (CA, marge) et de la remise à zéro.
         const confirmation = confirm(
-            "Confirmer la production du jour ?\n\nCeci va déduire du stock d'ingrédients pour le pain :\n" + recap +
-            "\n\nLes produits à stock limité (croissants, viennoiseries...) ne sont pas concernés ici — utilise \"📦 Mouvements de stock\" pour eux, qui déduit leurs ingrédients au moment de la fabrication.\n\nCette action ne peut pas être annulée automatiquement."
+            "Clôturer la journée ?\n\nCeci enregistre l'historique du jour (chiffre d'affaires, marge) et remet les compteurs à zéro pour la prochaine livraison.\n\nLes ingrédients ne sont pas concernés ici — vérifie que \"Pâte pesée\" et, si besoin, \"Pâte tardive faite\" ont déjà été cliqués.\n\nCette action ne peut pas être annulée automatiquement."
         );
         if (!confirmation) return;
-
-        // Déduction du stock des ingrédients bruts.
-        Object.keys(accumulateur).forEach(nom => {
-            const ing = listeIngredients.find(i => i.nom.trim().toLowerCase() === nom.trim().toLowerCase());
-            if (ing) {
-                const aDeduire = ing.type === 'kg' ? accumulateur[nom] / 1000 : accumulateur[nom];
-                ing.stockActuel = (ing.stockActuel || 0) - aDeduire;
-            }
-        });
 
 
         // Instantané pour l'historique quotidien : CA, coût matière, marge, détail par produit.
