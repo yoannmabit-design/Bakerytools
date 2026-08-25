@@ -567,22 +567,21 @@
 
       <button class="btn" style="background:#16a34a; font-size:1rem; padding:14px 20px; width:100%; max-width:900px; margin-bottom:15px; box-shadow:0 2px 8px rgba(22,163,74,0.3);" onclick="confirmerProductionDuJour()">✅ Confirmer la production du jour (déduit le stock matières premières)</button>
 
-      <button class="btn" style="background:var(--accent); font-size:1rem; padding:12px 20px; width:100%; max-width:900px; margin-bottom:15px;" onclick="ouvrirPanneauMarche()">🛒 Sorties marché groupées</button>
+      <button class="btn" style="background:var(--accent); font-size:1rem; padding:12px 20px; width:100%; max-width:900px; margin-bottom:15px;" onclick="ouvrirPanneauMarche()">📦 Mouvements de stock</button>
 
       <div class="carte" id="panneauMarche" hidden style="max-width:900px; border-left:5px solid var(--accent);">
-        <h2 style="color:var(--accent); margin-bottom:4px; font-size:1.1rem;">🛒 Sorties marché groupées</h2>
+        <h2 style="color:var(--accent); margin-bottom:4px; font-size:1.1rem;">📦 Mouvements de stock</h2>
         <p class="sous-titre">
-          Une seule validation décrémente le stock de tout ce qui est rempli ci-dessous.
-          ⭐ garde un produit dans cette liste courte pour la prochaine fois.
+          Tous les produits à stock limité. Une seule validation applique tout ce qui est rempli ci-dessous.
         </p>
+        <input type="search" id="rechercheMarche" placeholder="🔎 Chercher un produit (nom ou code)…"
+               oninput="afficherPanneauMarche()"
+               style="width:100%; box-sizing:border-box; padding:10px 12px; font-size:1rem; border:1px solid var(--trait); border-radius:var(--r); margin-bottom:10px; background:var(--papier); color:var(--encre);">
         <div id="listeMarche"></div>
         <div style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;">
-          <button class="btn" style="background:#16a34a;" onclick="validerSortiesMarche()">✅ Valider les sorties</button>
+          <button class="btn" style="background:#16a34a;" onclick="validerSortiesMarche()">✅ Valider</button>
           <button class="btn" style="background:var(--encre-doux);" onclick="document.getElementById('panneauMarche').hidden = true;">Fermer</button>
         </div>
-        <p style="font-size:0.75rem; color:var(--encre-doux); margin-top:10px;">
-          Un produit qui n'est pas encore sur la liste apparaît en dessous, à ajouter d'un clic sur ⭐.
-        </p>
       </div>
 
       <div id="conteneurCartesCommandes"></div>
@@ -2699,13 +2698,12 @@
             // boutique_produits. Un produit ERP sans code boutique (vendu
             // uniquement au marché, jamais publié en ligne) n'a pas non plus
             // de ligne stock : rien à lire.
+            // Affichage seul ici, à titre indicatif : les actions (fabrication,
+            // sortie marché) vivent toutes dans le panneau "Mouvements de
+            // stock" — un seul endroit où faire ce geste, pas deux.
             const modeStock = prod.id ? modeStockBoutique[prod.id] : null;
             const ligneStock = (modeStock === 'limite')
-                ? `<div class="stock-produit-discret">
-                    Stock : <strong>${stockBoutique[prod.id] ?? 0}</strong>
-                    <button class="btn-stock" onclick="ajouterProduction('${prod.id}', '${prod.nom.replace(/'/g, "\\'")}')">➕ Fabrication</button>
-                    <button class="btn-stock" onclick="sortirPourMarche('${prod.id}', '${prod.nom.replace(/'/g, "\\'")}')">🛒 Sortie marché</button>
-                   </div>`
+                ? `<div class="stock-produit-discret">Stock : <strong>${stockBoutique[prod.id] ?? 0}</strong></div>`
                 : '';
             card.innerHTML = `
                 <span class="product-name-cmd">${prod.nom}</span>
@@ -2805,65 +2803,26 @@
        Écrit directement dans boutique_produits.stock (règle Firestore :
        estAdmin() requis — d'où la connexion admin ajoutée à l'ERP).
        ========================================================== */
-    function ecrireStockBoutique(id, nom, delta, motif) {
-        if (!auth || !auth.currentUser) {
-            alert("Connecte-toi en admin (barre latérale) avant de modifier le stock.");
-            return;
-        }
-        if (!db) { alert("Firebase indisponible — impossible d'enregistrer pour le moment."); return; }
-        db.collection("boutique_produits").doc(id).update({
-            stock: firebase.firestore.FieldValue.increment(delta)
-        }).catch((err) => alert("Erreur d'enregistrement du stock (" + motif + ") : " + err.message));
-    }
-
-    function ajouterProduction(id, nom) {
-        const saisie = prompt("Quantité de \"" + nom + "\" qui vient d'être produite ?");
-        if (saisie === null) return;
-        const qte = parseInt(saisie, 10);
-        if (!qte || qte <= 0) { alert("Quantité invalide."); return; }
-        ecrireStockBoutique(id, nom, qte, "fabrication");
-    }
-
-    function sortirPourMarche(id, nom) {
-        const saisie = prompt("Quantité de \"" + nom + "\" sortie pour le marché ?");
-        if (saisie === null) return;
-        const qte = parseInt(saisie, 10);
-        if (!qte || qte <= 0) { alert("Quantité invalide."); return; }
-        ecrireStockBoutique(id, nom, -qte, "sortie marché");
-    }
-
     /* ==========================================================
-       SORTIES MARCHÉ GROUPÉES
-       Une liste courte de produits "limité", que vous constituez vous-même
-       en étoilant ceux que vous emmenez vraiment au marché — pas la liste
-       entière du catalogue à chaque fois. Les quantités saisies restent en
-       mémoire sur cet appareil (localStorage, comme la config du POS) pour
-       préremplir la fois suivante, puisque d'une semaine à l'autre les
-       quantités emmenées se ressemblent. Une seule validation décrémente
-       tout ce qui est rempli, au lieu d'un aller-retour par produit.
+       MOUVEMENTS DE STOCK
+       Un seul panneau pour les deux gestes qui touchent le stock des
+       produits "limité" — fabrication (+) et sortie marché (−) — plutôt
+       que deux mécanismes séparés à retenir. Tous les produits limités y
+       sont, filtrables par recherche comme le reste de l'onglet Commandes.
+       Les quantités saisies restent en mémoire sur cet appareil
+       (localStorage, comme la config du POS) pour préremplir la fois
+       suivante — d'une journée/semaine à l'autre elles se ressemblent.
+       Une seule validation applique tout ce qui est rempli, colonne par
+       colonne, au lieu d'un aller-retour par produit.
        ========================================================== */
-    function listeMarcheIds() {
-        try { return JSON.parse(localStorage.getItem('bakery-marche-liste') || '[]'); }
-        catch (e) { return []; }
-    }
-    function sauverListeMarcheIds(liste) {
-        try { localStorage.setItem('bakery-marche-liste', JSON.stringify(liste)); } catch (e) {}
-    }
     function dernieresQtesMarche() {
         try { return JSON.parse(localStorage.getItem('bakery-marche-qte') || '{}'); }
         catch (e) { return {}; }
     }
-    function sauverQteMarche(id, qte) {
+    function sauverQtesMarche(qtesParId) {
         const q = dernieresQtesMarche();
-        q[id] = qte;
+        Object.assign(q, qtesParId);
         try { localStorage.setItem('bakery-marche-qte', JSON.stringify(q)); } catch (e) {}
-    }
-
-    function toggleEtoileMarche(id) {
-        let liste = listeMarcheIds();
-        liste = liste.includes(id) ? liste.filter(x => x !== id) : [...liste, id];
-        sauverListeMarcheIds(liste);
-        afficherPanneauMarche();
     }
 
     function ouvrirPanneauMarche() {
@@ -2875,64 +2834,77 @@
     function afficherPanneauMarche() {
         const zone = document.getElementById('listeMarche');
         if (!zone) return;
-        const liste = listeMarcheIds();
         const qtes = dernieresQtesMarche();
+        const champRecherche = document.getElementById('rechercheMarche');
+        const filtre = cleNom(champRecherche ? champRecherche.value : '');
 
-        // Tous les produits "limité" connus, avec leur nom retrouvé dans les
-        // fiches vendables (produitsVendables tourne déjà sur ce même critère).
         const produitsLimites = produitsVendables()
             .filter(f => f.id && modeStockBoutique[f.id] === 'limite')
+            .filter(f => !filtre || cleNom(f.nom).includes(filtre) || cleNom(f.id).includes(filtre))
             .map(f => ({ id: f.id, nom: f.nom }));
 
-        const surListe = produitsLimites.filter(p => liste.includes(p.id));
-        const horsListe = produitsLimites.filter(p => !liste.includes(p.id));
+        if (produitsLimites.length === 0) {
+            zone.innerHTML = '<p style="color:var(--encre-doux); font-size:0.9rem;">Aucun produit à stock limité ne correspond.</p>';
+            return;
+        }
 
-        const ligne = (p, coche) => `
+        zone.innerHTML = produitsLimites.map(p => `
             <div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--trait); flex-wrap:wrap;">
-                <button type="button" onclick="toggleEtoileMarche('${p.id}')" title="${coche ? 'Retirer de la liste courte' : 'Ajouter à la liste courte'}"
-                        style="background:none; border:none; font-size:1.3rem; cursor:pointer; line-height:1;">${coche ? '⭐' : '☆'}</button>
                 <span style="flex:1; min-width:140px;">${p.nom}</span>
                 <span style="font-size:0.85rem; color:var(--encre-doux);">Stock : ${stockBoutique[p.id] ?? 0}</span>
-                <input type="number" min="0" step="1" data-marche-id="${p.id}" placeholder="0"
-                       value="${qtes[p.id] || ''}"
-                       style="width:70px; padding:6px 8px; border:1px solid var(--trait); border-radius:6px; text-align:center; font-size:1rem;">
-            </div>`;
-
-        zone.innerHTML =
-            (surListe.length
-                ? surListe.map(p => ligne(p, true)).join('')
-                : '<p style="color:var(--encre-doux); font-size:0.9rem;">Aucun produit sur la liste courte pour l\'instant — étoile un produit ci-dessous pour commencer.</p>')
-            + (horsListe.length
-                ? `<p style="margin-top:12px; font-size:0.8rem; color:var(--encre-doux);">Autres produits :</p>` + horsListe.map(p => ligne(p, false)).join('')
-                : '');
+                <label style="display:flex; align-items:center; gap:4px; font-size:0.8rem; color:#16a34a;">➕
+                    <input type="number" min="0" step="1" data-marche-id="${p.id}" data-marche-type="fab" placeholder="0"
+                           value="${(qtes[p.id] && qtes[p.id].fab) || ''}"
+                           style="width:60px; padding:6px 8px; border:1px solid var(--trait); border-radius:6px; text-align:center; font-size:1rem;">
+                </label>
+                <label style="display:flex; align-items:center; gap:4px; font-size:0.8rem; color:var(--alerte);">🛒
+                    <input type="number" min="0" step="1" data-marche-id="${p.id}" data-marche-type="sortie" placeholder="0"
+                           value="${(qtes[p.id] && qtes[p.id].sortie) || ''}"
+                           style="width:60px; padding:6px 8px; border:1px solid var(--trait); border-radius:6px; text-align:center; font-size:1rem;">
+                </label>
+            </div>`).join('');
     }
 
     async function validerSortiesMarche() {
         if (!auth || !auth.currentUser) {
-            alert("Connecte-toi en admin (barre latérale) avant de valider des sorties.");
+            alert("Connecte-toi en admin (barre latérale) avant de valider des mouvements.");
             return;
         }
-        const champs = document.querySelectorAll('#listeMarche input[data-marche-id]');
-        const aTraiter = [];
-        champs.forEach(champ => {
-            const qte = parseInt(champ.value, 10);
-            if (qte > 0) aTraiter.push({ id: champ.dataset.marcheId, qte });
+        // Une seule écriture par produit : fabrication et sortie du même
+        // produit se compensent (+3 fabriqués, -2 sortis = +1 net), pas
+        // deux écritures qui se marchent dessus.
+        const parProduit = {};
+        document.querySelectorAll('#listeMarche input[data-marche-id]').forEach(champ => {
+            const qte = parseInt(champ.value, 10) || 0;
+            if (qte <= 0) return;
+            const id = champ.dataset.marcheId;
+            const signe = champ.dataset.marcheType === 'fab' ? 1 : -1;
+            parProduit[id] = (parProduit[id] || 0) + signe * qte;
         });
-        if (aTraiter.length === 0) { alert("Aucune quantité saisie."); return; }
 
-        const recap = aTraiter.map(a => {
-            const p = produitsVendables().find(f => f.id === a.id);
-            return `  ${p ? p.nom : a.id} : ${a.qte}`;
+        const idsActifs = Object.keys(parProduit).filter(id => parProduit[id] !== 0);
+        if (idsActifs.length === 0) { alert("Aucune quantité saisie."); return; }
+
+        const recap = idsActifs.map(id => {
+            const p = produitsVendables().find(f => f.id === id);
+            const delta = parProduit[id];
+            return `  ${p ? p.nom : id} : ${delta > 0 ? '+' : ''}${delta}`;
         }).join('\n');
-        if (!confirm("Décrémenter le stock de :\n\n" + recap + "\n\nConfirmer ?")) return;
+        if (!confirm("Appliquer au stock :\n\n" + recap + "\n\nConfirmer ?")) return;
 
         try {
-            await Promise.all(aTraiter.map(a =>
-                db.collection("boutique_produits").doc(a.id).update({
-                    stock: firebase.firestore.FieldValue.increment(-a.qte)
+            await Promise.all(idsActifs.map(id =>
+                db.collection("boutique_produits").doc(id).update({
+                    stock: firebase.firestore.FieldValue.increment(parProduit[id])
                 })
             ));
-            aTraiter.forEach(a => sauverQteMarche(a.id, a.qte));
+            const qtesASauver = {};
+            document.querySelectorAll('#listeMarche input[data-marche-id]').forEach(champ => {
+                const id = champ.dataset.marcheId;
+                qtesASauver[id] = qtesASauver[id] || {};
+                qtesASauver[id][champ.dataset.marcheType] = parseInt(champ.value, 10) || 0;
+            });
+            sauverQtesMarche(qtesASauver);
             document.getElementById('panneauMarche').hidden = true;
         } catch (err) {
             alert("Erreur d'enregistrement : " + err.message);
