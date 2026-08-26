@@ -2394,22 +2394,23 @@
             return `<tr><td>${label}</td><td class="qte-cell">${Math.ceil((ing.qte || 0) * f)} g</td></tr>`;
         }).join('');
 
-        const lotsAuto = calculerLots(qte, fiche.seuilPetrin, fiche.tailleLotMax);
+        // Le seuil doit juger sur ce qu'il y a vraiment à façonner ce
+        // matin-là — pesée ET tardif ensemble, pas la pesée seule. Sans ça,
+        // un tardif qui fait franchir le seuil (25 pesés + 3 tardif = 28)
+        // ne déclenchait aucune division alors que la vraie quantité le justifie.
+        const qteTotal = qte + qteS;
+        const lotsAuto = calculerLots(qteTotal, fiche.seuilPetrin, fiche.tailleLotMax);
         const nbForce = nbLotsManuel[fiche.nom] || 0;
         let lots = (nbForce > 0 && lotsAuto.length > 1)
-            ? calculerLots(qte, fiche.seuilPetrin, fiche.tailleLotMax, nbForce)
+            ? calculerLots(qteTotal, fiche.seuilPetrin, fiche.tailleLotMax, nbForce)
             : lotsAuto;
 
         // Toutes les pâtes sont faites le matin, les pesées la veille au soir :
-        // rien n'est encore mélangé quand le tardif arrive. Il rejoint donc la
-        // boîte la moins remplie plutôt que de former une pâte à part — la
-        // déduction d'ingrédients reste néanmoins un geste séparé (le bouton
-        // tardif), les deux s'additionnent au même total quoi qu'il arrive.
-        let indexTardif = -1;
-        if (qteS > 0 && lots.length > 0) {
-            indexTardif = lots.indexOf(Math.min(...lots));
-            lots = lots.map((l, i) => i === indexTardif ? l + qteS : l);
-        }
+        // rien n'est encore mélangé quand le tardif arrive. Une fois le total
+        // réparti en pétrins, le tardif est simplement attribué au plus petit
+        // pour l'affichage — la déduction d'ingrédients reste un geste séparé
+        // (le bouton tardif), les deux s'additionnent au même total.
+        const indexTardif = qteS > 0 && lots.length > 0 ? lots.indexOf(Math.min(...lots)) : -1;
 
         const controleLots = lotsAuto.length > 1 ? `
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
@@ -2426,7 +2427,7 @@
                    <tbody>${lignesPour(fiche.nbPieces > 0 ? lots[0] / fiche.nbPieces : 0)}</tbody>
                </table>${qteS > 0 ? `<p style="font-size:0.8em; color:var(--encre-doux); margin-top:4px;">dont ${qteS} tardif</p>` : ''}`
             : `<p style="color:var(--accent); font-weight:bold; margin-bottom:6px;">
-                   ⚠️ ${qte} pièces dépasse le seuil pétrin (${fiche.seuilPetrin}) — divisé en ${lots.length} pétrins successifs.
+                   ⚠️ ${qteTotal} pièces dépasse le seuil pétrin (${fiche.seuilPetrin}) — divisé en ${lots.length} pétrins successifs.
                </p>` + lots.map((lot, i) => `
                    <div style="margin-bottom:14px;">
                        <h3 style="font-size:1em; margin-bottom:4px;">Pétrin ${i + 1} — ${lot} pièce(s)${i === indexTardif ? ` <span style="font-weight:normal; color:var(--encre-doux); font-size:0.85em;">(dont ${qteS} tardif)</span>` : ''}</h3>
