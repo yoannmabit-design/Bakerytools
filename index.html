@@ -172,9 +172,6 @@
     .onglet-btn.actif { background: var(--accent); border-color: var(--accent); color: #fff; }
     .qte-cell { font-weight: bold; background: var(--creme) !important; }
     .info-hydratation, .info-nb { margin-top: 10px; font-size: 1.05em; color: var(--encre-doux); }
-    .supplement-tardif { margin-top: 20px; padding-top: 15px; border-top: 2px dashed #b05a2f; }
-    .supplement-tardif h3 { color: #b05a2f; margin-bottom: 10px; font-size: 1.15rem; }
-    .supplement-tardif .qte-cell { background: #fbe3d0 !important; }
     .carte-tardive { border: 2px dashed #b05a2f; background: #fff8ef; }
     .carte-tardive h2 { color: #b05a2f; }
 
@@ -1710,6 +1707,14 @@
             }
         `;
 
+        const blocLotsPetrin = prod.categorie !== 'Pains' ? '' : `
+            <div style="margin-top:6px; font-size:0.85em;">
+                <label>Seuil pétrin : <input type="number" min="0" step="1" style="width:60px; display:inline-block;" value="${prod.seuilPetrin || ''}" placeholder="—" onchange="modifierFicheChampNombre(${pIdx}, 'seuilPetrin', this.value)"></label>
+                <label style="margin-left:10px;">Taille max/lot : <input type="number" min="0" step="1" style="width:60px; display:inline-block;" value="${prod.tailleLotMax || ''}" placeholder="—" onchange="modifierFicheChampNombre(${pIdx}, 'tailleLotMax', this.value)"></label>
+                <span style="color:var(--encre-doux);"> — au-delà de ce seuil, la recette se divise en plusieurs pétrins d'au plus cette taille (façonnage trop long en un seul lot).</span>
+            </div>
+        `;
+
         const cout = calculerCoutFiche(prod);
 
         bloc.innerHTML = `
@@ -1720,6 +1725,7 @@
                     <input type="checkbox" style="width:auto;" ${prod.vendable ? 'checked' : ''} onchange="modifierFicheVendable(${pIdx}, this.checked)"> Vendable
                 </label>
                 ${blocPiecesOuPoids}
+                ${blocLotsPetrin}
                 <button class="btn-dup" style="background:#2980b9; color:#fff; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;" onclick="dupliquerFiche(${pIdx})">📋</button>
                 <button class="btn-sup" onclick="supprimerFiche(${pIdx})">🗑️</button>
             </div>
@@ -1758,6 +1764,45 @@
     function modifierFicheNbPieces(pIdx, val) { fichesTechniques[pIdx].nbPieces = val; marquerFichesModifiees(); afficherFichesCouts(); }
     function modifierFicheModeSaisie(pIdx, val) { fichesTechniques[pIdx].modeSaisie = val; marquerFichesModifiees(); afficherFichesCouts(); }
     function modifierFichePoidsPiece(pIdx, val) { fichesTechniques[pIdx].poidsPiece = val; marquerFichesModifiees(); afficherFichesCouts(); }
+
+    function modifierFicheChampNombre(pIdx, champ, val) {
+        fichesTechniques[pIdx][champ] = parseInt(val, 10) || 0;
+        marquerFichesModifiees();
+        afficherFichesCouts();
+    }
+
+    function ajusterNbLots(nomFiche, actuel, delta, reset) {
+        if (reset) {
+            delete nbLotsManuel[nomFiche];
+        } else {
+            // Jamais moins d'un seul pétrin — en dessous, la division n'a plus de sens.
+            nbLotsManuel[nomFiche] = Math.max(1, actuel + delta);
+        }
+        afficherRecettesPains();
+    }
+
+    /* Divise une quantité en lots quand le pétrin/façonnage ne suit pas au-delà
+       d'un certain volume — le nombre de lots est le minimum possible compte
+       tenu du maximum par lot (jamais plus de divisions que nécessaire), le
+       reste de la division entière est concentré sur le dernier lot plutôt
+       que réparti à la louche sur tous. */
+    /* Divise une quantité en lots quand le pétrin/façonnage ne suit pas au-delà
+       d'un certain volume. Par défaut, le nombre de lots est le minimum
+       possible compte tenu du maximum par lot — mais ce n'est qu'une
+       suggestion : nbLotsForce permet de l'ajuster à la main (ex. préférer
+       deux lots égaux sur un chiffre pair plutôt que ce que le calcul aurait
+       proposé), c'est un arbitrage d'organisation du jour, pas une règle fixe.
+       Dans les deux cas, le reste de la division entière est concentré sur
+       le dernier lot plutôt que réparti à la louche sur tous. */
+    function calculerLots(qte, seuilPetrin, tailleLotMax, nbLotsForce) {
+        if (!seuilPetrin || qte <= seuilPetrin || !tailleLotMax || tailleLotMax <= 0) return [qte];
+        const nbLots = nbLotsForce > 0 ? nbLotsForce : Math.ceil(qte / tailleLotMax);
+        if (nbLots <= 1) return [qte];
+        const base = Math.floor(qte / nbLots);
+        const lots = new Array(nbLots - 1).fill(base);
+        lots.push(qte - base * (nbLots - 1));
+        return lots;
+    }
     function modifierTypeIngredFiche(pIdx, iIdx, val) {
         fichesTechniques[pIdx].ingredients[iIdx].type = val;
         // Aligne le nom stocké avec la première option que le menu déroulant affichera réellement.
@@ -2021,6 +2066,9 @@
        automatique des commandes boutique. */
     let pesees = null;         // { horodatage, quantites: {nomPain: qte} }
     let ongletActifPains = null;
+    // Ajustement du nombre de pétrins, à la main — propre à cette session,
+    // jamais sauvegardé : c'est un arbitrage du jour, pas une donnée durable.
+    let nbLotsManuel = {};
 
     // Ce que réclame la journée à cet instant : commandes en ligne + vos ajouts.
     function totalPainActuel(fiche) {
@@ -2339,23 +2387,56 @@
            porte uniquement ce qui est arrivé depuis. */
         const qte  = pesees ? qtePesee(fiche) : totalPainActuel(fiche);
         const qteS = qteSupplement(fiche);
-        const facteur  = fiche.nbPieces > 0 ? qte  / fiche.nbPieces : 0;
         const facteurS = fiche.nbPieces > 0 ? qteS / fiche.nbPieces : 0;
-
-        let lignes = '';
-        (fiche.ingredients || []).forEach(ing => {
-            const label = ing.type === 'composite' ? `${ing.nom} (base)` : ing.nom;
-            const qteCalc = Math.ceil((ing.qte || 0) * facteur);
-            lignes += `<tr><td>${label}</td><td class="qte-cell">${qteCalc} g</td></tr>`;
-        });
-
-        const hydratation = calculerHydratation(fiche);
 
         const lignesPour = (f) => (fiche.ingredients || []).map(ing => {
             const label = ing.type === 'composite' ? `${ing.nom} (base)` : ing.nom;
             return `<tr><td>${label}</td><td class="qte-cell">${Math.ceil((ing.qte || 0) * f)} g</td></tr>`;
         }).join('');
-        const lignesSupplement = qteS > 0 ? lignesPour(facteurS) : '';
+
+        const lotsAuto = calculerLots(qte, fiche.seuilPetrin, fiche.tailleLotMax);
+        const nbForce = nbLotsManuel[fiche.nom] || 0;
+        let lots = (nbForce > 0 && lotsAuto.length > 1)
+            ? calculerLots(qte, fiche.seuilPetrin, fiche.tailleLotMax, nbForce)
+            : lotsAuto;
+
+        // Toutes les pâtes sont faites le matin, les pesées la veille au soir :
+        // rien n'est encore mélangé quand le tardif arrive. Il rejoint donc la
+        // boîte la moins remplie plutôt que de former une pâte à part — la
+        // déduction d'ingrédients reste néanmoins un geste séparé (le bouton
+        // tardif), les deux s'additionnent au même total quoi qu'il arrive.
+        let indexTardif = -1;
+        if (qteS > 0 && lots.length > 0) {
+            indexTardif = lots.indexOf(Math.min(...lots));
+            lots = lots.map((l, i) => i === indexTardif ? l + qteS : l);
+        }
+
+        const controleLots = lotsAuto.length > 1 ? `
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                <span style="font-size:0.85em; color:var(--encre-doux);">Nombre de pétrins :</span>
+                <button type="button" class="btn-counter" onclick="ajusterNbLots('${fiche.nom.replace(/'/g, "\\'")}', ${lotsAuto.length}, -1)">-</button>
+                <strong>${lotsAuto.length}</strong>
+                <button type="button" class="btn-counter" onclick="ajusterNbLots('${fiche.nom.replace(/'/g, "\\'")}', ${lotsAuto.length}, 1)">+</button>
+                ${nbForce > 0 ? `<button type="button" class="btn-stock" onclick="ajusterNbLots('${fiche.nom.replace(/'/g, "\\'")}', 0, 0, true)">↺ Auto (${lotsAuto.length})</button>` : ''}
+            </div>` : '';
+
+        const tablesPrincipales = lots.length <= 1
+            ? `<table>
+                   <thead><tr><th>Ingrédient</th><th>Quantité à peser</th></tr></thead>
+                   <tbody>${lignesPour(fiche.nbPieces > 0 ? lots[0] / fiche.nbPieces : 0)}</tbody>
+               </table>${qteS > 0 ? `<p style="font-size:0.8em; color:var(--encre-doux); margin-top:4px;">dont ${qteS} tardif</p>` : ''}`
+            : `<p style="color:var(--accent); font-weight:bold; margin-bottom:6px;">
+                   ⚠️ ${qte} pièces dépasse le seuil pétrin (${fiche.seuilPetrin}) — divisé en ${lots.length} pétrins successifs.
+               </p>` + lots.map((lot, i) => `
+                   <div style="margin-bottom:14px;">
+                       <h3 style="font-size:1em; margin-bottom:4px;">Pétrin ${i + 1} — ${lot} pièce(s)${i === indexTardif ? ` <span style="font-weight:normal; color:var(--encre-doux); font-size:0.85em;">(dont ${qteS} tardif)</span>` : ''}</h3>
+                       <table>
+                           <thead><tr><th>Ingrédient</th><th>Quantité à peser</th></tr></thead>
+                           <tbody>${lignesPour(fiche.nbPieces > 0 ? lot / fiche.nbPieces : 0)}</tbody>
+                       </table>
+                   </div>`).join('');
+
+        const hydratation = calculerHydratation(fiche);
 
         const detailQte = pesees
             ? `Pesé : ${qte}${qteS > 0 ? ` · Tardif : ${qteS}` : ''} · <strong>Total : ${qte + qteS}</strong>`
@@ -2364,20 +2445,10 @@
         div.innerHTML = `
             <div id="ancreDetailPain" style="scroll-margin-top:12px"></div>
             <h2 style="color:var(--accent); margin-bottom:10px;">${fiche.nom}</h2>
-            <table>
-                <thead><tr><th>Ingrédient</th><th>Quantité à peser</th></tr></thead>
-                <tbody>${lignes}</tbody>
-            </table>
+            ${controleLots}
+            ${tablesPrincipales}
             <div class="info-hydratation">💧 Taux d'hydratation : ${hydratation.toFixed(1).replace('.', ',')}%</div>
             <div class="info-nb">${detailQte}</div>
-            ${qteS > 0 ? `
-                <div class="supplement-tardif">
-                    <h3>⏱️ Tardif (${qteS} pièce(s))</h3>
-                    <table>
-                        <thead><tr><th>Ingrédient</th><th>Quantité supplémentaire</th></tr></thead>
-                        <tbody>${lignesSupplement}</tbody>
-                    </table>
-                </div>` : ''}
         `;
         return div;
     }
