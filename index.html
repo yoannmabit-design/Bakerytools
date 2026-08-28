@@ -2187,8 +2187,54 @@
         alert("⚖️ Rappel : des quantités de pain sont renseignées dans Commandes/Ajouts, mais la pesée n'a pas encore été confirmée aujourd'hui.");
     }
 
+    /* Reprendre les pesées rend les ingrédients que le figeage avait déduits.
+       On recrédite exactement les quantités figées, donc l'opération inverse
+       exacte du figeage — sans quoi un aller-retour les compterait deux fois.
+       Le tardif, lui, se déduit par un geste séparé : on ne peut pas savoir
+       ici s'il a été cliqué, d'où l'avertissement quand il est rempli. */
     function annulerPesees() {
-        if (!confirm("Reprendre les pesées ?\n\nLe tableau Tardif sera vidé et refondu dans le tableau principal — à ne faire que si tu n'as pas encore pesé.")) return;
+        if (!pesees) return;
+
+        const accumulateur = {};
+        fichesPains().forEach(f => {
+            const qte = pesees.quantites[f.nom] || 0;
+            if (qte > 0 && f.nbPieces > 0) {
+                accumulerConsommationBrute(f, qte / f.nbPieces, accumulateur, new Set());
+            }
+        });
+
+        const recap = Object.keys(accumulateur).map(nom => {
+            const ing = listeIngredients.find(i => i.nom.trim().toLowerCase() === nom.trim().toLowerCase());
+            const uniteFinale = ing && ing.type === 'kg'
+                ? (accumulateur[nom] / 1000).toFixed(2) + ' kg'
+                : accumulateur[nom].toFixed(1) + ' unité(s)';
+            return `  • ${nom} : +${uniteFinale}${!ing ? ' ⚠️ introuvable' : ''}`;
+        }).join('\n');
+
+        const tardifRempli = fichesPains().some(f => (quantitesTardif[f.nom] || 0) > 0);
+        const avertirTardif = tardifRempli
+            ? "\n\n⚠️ Le tableau Tardif contient des quantités et sera vidé. Si tu as déjà cliqué \"Pâte tardive faite\", ses ingrédients ne sont PAS rendus ici — corrige-les à la main dans l'onglet Ingrédients."
+            : "";
+
+        if (!confirm(
+            "Reprendre les pesées ?\n\nLes ingrédients déduits au figeage sont rendus au stock :\n"
+            + (recap || "  (aucun)")
+            + "\n\nLe tableau Tardif sera vidé et refondu dans le tableau principal."
+            + avertirTardif
+        )) return;
+
+        Object.keys(accumulateur).forEach(nom => {
+            const ing = listeIngredients.find(i => i.nom.trim().toLowerCase() === nom.trim().toLowerCase());
+            if (ing) {
+                const aRendre = ing.type === 'kg' ? accumulateur[nom] / 1000 : accumulateur[nom];
+                ing.stockActuel = (ing.stockActuel || 0) + aRendre;
+            }
+        });
+        if (Object.keys(accumulateur).length && db) {
+            sauvegarderCloud(true);
+            afficherTableauIngredients();
+        }
+
         // Tardif redevient sans objet une fois qu'on retire le gel : ce
         // qu'il contenait rejoint le calcul normal via quantitesCommandes,
         // qu'on n'avait jamais touché entre-temps.
@@ -3208,9 +3254,11 @@
         if (db) {
             sauvegarderCloud(true); // silencieux : une seule alerte de confirmation en fin d'opération
             sauvegarderCommandesCloud();
-            alert("Production confirmée : stock déduit, produits finis mis à jour.\n\nLes ajouts manuels et les recettes de base ajoutées sont remis à zéro pour la prochaine livraison.");
+            // Le message doit dire ce que le bouton fait vraiment : les
+            // ingrédients ont été déduits plus tôt, à la pesée et au tardif.
+            alert("Journée clôturée.\n\nHistorique enregistré (chiffre d'affaires, marge, détail par produit).\nAjouts manuels, tardif et pesées remis à zéro pour la prochaine livraison.\n\nAucun ingrédient n'a été déduit ici : c'est \"Pâte pesée\" et \"Pâte tardive faite\" qui s'en chargent.");
         } else {
-            alert("Production confirmée localement — Firebase indisponible, pense à enregistrer manuellement une fois la connexion rétablie.");
+            alert("Journée clôturée localement — Firebase indisponible.\n\nL'historique n'a pas été enregistré : pense à refaire la clôture une fois la connexion rétablie, avant de ressaisir des quantités.");
         }
     }
 
