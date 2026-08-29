@@ -3095,7 +3095,8 @@
         // produit se compensent (+3 fabriqués, -2 sortis = +1 net), pas
         // deux écritures qui se marchent dessus.
         const parProduit = {};
-        const parProduitFab = {};   // pour la déduction d'ingrédients — uniquement la colonne Fabrication
+        const parProduitFab = {};    // pour la déduction d'ingrédients — uniquement la colonne Fabrication
+        const parProduitSortie = {}; // pour synchroniser Ajouts — uniquement la colonne Sortie marché
         document.querySelectorAll('#listeMarche input[data-marche-id]').forEach(champ => {
             const qte = parseInt(champ.value, 10) || 0;
             if (qte <= 0) return;
@@ -3103,6 +3104,7 @@
             const signe = champ.dataset.marcheType === 'fab' ? 1 : -1;
             parProduit[id] = (parProduit[id] || 0) + signe * qte;
             if (champ.dataset.marcheType === 'fab') parProduitFab[id] = (parProduitFab[id] || 0) + qte;
+            if (champ.dataset.marcheType === 'sortie') parProduitSortie[id] = (parProduitSortie[id] || 0) + qte;
         });
 
         const idsActifs = Object.keys(parProduit).filter(id => parProduit[id] !== 0);
@@ -3140,6 +3142,19 @@
                 })
             ));
 
+            // Sortie marché = même geste que remplir Ajouts à la main : plutôt
+            // que de taper le même chiffre deux fois, il rejoint directement
+            // Ajouts ici, pour apparaître dans le résumé sans double saisie.
+            let ajoutsTouches = false;
+            Object.keys(parProduitSortie).forEach(id => {
+                const fiche = fichesTechniques.find(f => f.id === id);
+                if (fiche) {
+                    quantitesCommandes[fiche.nom] = (quantitesCommandes[fiche.nom] || 0) + parProduitSortie[id];
+                    ajoutsTouches = true;
+                }
+            });
+            if (ajoutsTouches) sauvegarderCommandesCloud();
+
             // Déduction des ingrédients, même mécanisme que la production du jour.
             Object.keys(accumulateur).forEach(nom => {
                 const ing = listeIngredients.find(i => i.nom.trim().toLowerCase() === nom.trim().toLowerCase());
@@ -3163,6 +3178,11 @@
             });
             sauverQtesMarche(qtesASauver);
             document.getElementById('panneauMarche').hidden = true;
+            if (ajoutsTouches) {
+                afficherCommandes();
+                if (typeof afficherRecettesPains === 'function') afficherRecettesPains();
+            }
+            alert("✅ Fait. Stock mis à jour" + (ajoutsTouches ? ", visible dans le résumé." : "."));
         } catch (err) {
             alert("Erreur d'enregistrement : " + err.message);
         }
