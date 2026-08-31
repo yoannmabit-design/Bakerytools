@@ -284,6 +284,11 @@
         </div>
       </div>
 
+      <div class="carte" style="max-width:900px;" id="dashCarteStockFini">
+        <h2 style="color:var(--accent); margin-bottom:10px; font-size:1.1rem;">🥐 Stock produits finis</h2>
+        <div id="dashStockFini"></div>
+      </div>
+
       <div class="carte" style="max-width:900px;" id="dashCarteStockBas">
         <h2 style="color:var(--alerte); margin-bottom:10px; font-size:1.1rem;">📝 Alertes Stock</h2>
         <div id="dashStockBas"></div>
@@ -1127,6 +1132,76 @@
     /* ==========================================================
        TABLEAU DE BORD
        ========================================================== */
+
+    /* Stock des produits finis, hors pains.
+       Le pain est fabriqué à la commande et ne touche pas au stock : il
+       n'a rien à faire ici, il encombrerait la liste sans rien apprendre.
+
+       Les produits illimités sont affichés au même titre que les limités.
+       « Illimité » ne veut pas dire « stock infini » mais « jamais bloqué
+       à la vente en ligne » : la quantité en réserve reste une vraie
+       information pour décider quoi fabriquer. La différence est marquée
+       par une mention discrète plutôt que par une exclusion.
+
+       Source : boutique_produits, déjà suivi en direct par
+       chargerPrixBoutique(). Aucune lecture supplémentaire. */
+    function afficherStockProduitsFinis() {
+        const el = document.getElementById('dashStockFini');
+        if (!el) return;
+
+        const parCategorie = {};
+        produitsVendables().forEach(f => {
+            if (f.categorie === 'Pains') return;
+            // Une fiche sans code boutique n'a pas de stock à montrer :
+            // elle n'existe pas dans boutique_produits.
+            if (!f.id || stockBoutique[f.id] === undefined) return;
+            // Tout ce qui n'est pas une viennoiserie tombe dans « Autres ».
+            const cat = f.categorie === 'Viennoiseries' ? 'Viennoiseries' : 'Autres';
+            (parCategorie[cat] = parCategorie[cat] || []).push({
+                nom: f.nom,
+                stock: stockBoutique[f.id] || 0,
+                illimite: (modeStockBoutique[f.id] || 'illimite') === 'illimite'
+            });
+        });
+
+        /* Deux sections, dans cet ordre, et pas d'autre : une catégorie
+           inattendue sur une fiche ne doit pas faire pousser une section
+           parasite dans le tableau de bord. */
+        const cats = ['Viennoiseries', 'Autres'].filter(c => parCategorie[c]);
+
+        if (!cats.length) {
+            el.innerHTML = '<p style="color:var(--encre-doux); font-size:0.85em;">' +
+                'Aucun produit fini hors pains dans le catalogue boutique.</p>';
+            return;
+        }
+
+        let html = '';
+        cats.forEach(cat => {
+            const items = parCategorie[cat];
+            // Le plus bas en premier : c'est ce qu'on fabrique en premier.
+            items.sort((a, b) => a.stock - b.stock || a.nom.localeCompare(b.nom));
+            html += '<div style="margin-bottom:14px;">' +
+              '<div style="font-weight:bold; color:var(--accent); font-size:0.95rem;' +
+              ' text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">' +
+              cat + '</div>' +
+              items.map(i => {
+                // Zéro se voit, sans crier : c'est une information de
+                // planification, pas une alerte.
+                const couleur = i.stock <= 0 ? 'var(--alerte)' : 'var(--accent)';
+                const mention = i.illimite
+                    ? ' <span style="color:var(--encre-doux); font-size:0.72em;">(vente non bloquée)</span>'
+                    : '';
+                return '<div style="display:flex; justify-content:space-between;' +
+                  ' align-items:baseline; padding:6px 0; border-bottom:1px solid var(--creme);' +
+                  ' font-size:1.05rem;"><span>' + i.nom + mention + '</span>' +
+                  '<span style="font-weight:bold; color:' + couleur + ';' +
+                  ' font-size:1.3rem; font-variant-numeric:tabular-nums;">' +
+                  i.stock + '</span></div>';
+              }).join('') + '</div>';
+        });
+        el.innerHTML = html;
+    }
+
     function afficherDashboardStock(enRupture) {
         const el = document.getElementById('dashStockBas');
         if (!el) return;
@@ -2868,6 +2943,11 @@
 
 
     function afficherCommandes() {
+        // Le tableau de bord se met à jour en même temps : cette fonction est
+        // déjà rappelée par les deux abonnements temps réel (quantités et
+        // catalogue boutique), inutile d'en ouvrir un troisième.
+        afficherStockProduitsFinis();
+
         const conteneur = document.getElementById('conteneurCartesCommandes');
         conteneur.innerHTML = '';
 
