@@ -231,12 +231,22 @@
 </style>
 
 <!-- Firebase SDK Compat Version -->
+<!-- Ouvre les connexions TLS pendant que le HTML se parse, au lieu
+     d'attendre la première requête vers chaque domaine. -->
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 <!-- Auth : nécessaire uniquement pour écrire dans boutique_produits (règles Firestore : estAdmin()) -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-<!-- SheetJS : lecture/écriture de fichiers CSV/Excel directement dans le navigateur -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- SheetJS : lecture/écriture de fichiers CSV/Excel directement dans le navigateur.
+     defer est essentiel : ce fichier pèse 200 ko et n'est utilisé que par les
+     boutons Import/Export, jamais au chargement. Sans defer il bloquait
+     l'affichage de la page pendant environ 3 secondes. Avec defer il se
+     télécharge en parallèle et s'exécute avant DOMContentLoaded, donc XLSX
+     est bien défini quand on en a besoin. Ne pas le retirer. -->
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -266,7 +276,8 @@
 
       <div class="carte" style="max-width:900px; border-left:5px solid #b35c00;">
         <h2 style="color:var(--accent); margin-bottom:10px; font-size:1.2rem;">📋 Résumé des commandes</h2>
-        <div id="rappelBoutique" style="font-size:0.85rem; color:#2f4858; background:#e8f0f4; padding:6px 10px; border-radius:6px; margin-bottom:8px;"></div>
+        <!-- min-height : rempli après Firestore, c'est l'élément LCP de la page. -->
+        <div id="rappelBoutique" style="font-size:0.85rem; color:#2f4858; background:#e8f0f4; padding:6px 10px; border-radius:6px; margin-bottom:8px; min-height:34px;"></div>
         <div id="resumeCommandes"></div>
       </div>
 
@@ -289,7 +300,10 @@
         <div id="dashStockFini"></div>
       </div>
 
-      <div class="carte" style="max-width:900px;" id="dashCarteStockBas">
+      <!-- min-height : cette carte se remplit après la lecture Firestore et
+           poussait toute la page vers le bas en apparaissant (l'essentiel du
+           CLS mesuré). La hauteur réservée absorbe le remplissage. -->
+      <div class="carte" style="max-width:900px; min-height:150px;" id="dashCarteStockBas">
         <h2 style="color:var(--alerte); margin-bottom:10px; font-size:1.1rem;">📝 Alertes Stock</h2>
         <div id="dashStockBas"></div>
         <button class="btn" style="background:var(--encre-doux); margin-top:8px;" onclick="showTab('ingredients', document.querySelector('[data-section=ingredients]'))">Voir dans Ingrédients →</button>
