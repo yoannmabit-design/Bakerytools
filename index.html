@@ -295,9 +295,18 @@
         </div>
       </div>
 
-      <div class="carte" style="max-width:900px;" id="dashCarteStockFini">
-        <h2 style="color:var(--accent); margin-bottom:10px; font-size:1.1rem;">🥐 Stock produits finis</h2>
-        <div id="dashStockFini"></div>
+      <!-- Liseré vert : c'est une carte de planification, pas d'alerte.
+           Le rouge est réservé aux Alertes Stock juste en dessous, l'ambre
+           aux pesées à faire — même convention que le reste de l'appli.
+           Repliable et ouverte par défaut : on la consulte le matin pour
+           décider des fabrications, puis on la referme. -->
+      <div class="carte" style="max-width:900px; border-left:5px solid var(--ok);" id="dashCarteStockFini">
+        <h2 style="color:var(--accent); margin:0; font-size:1.1rem; display:flex; justify-content:space-between; align-items:center; cursor:pointer;"
+            onclick="toggleBloc('dashStockFini', 'iconeStockFini')">
+          <span>🥐 Stock produits finis</span>
+          <span id="iconeStockFini" style="color:var(--encre-doux); font-size:0.9rem;">▲</span>
+        </h2>
+        <div class="bloc-repliable ouvert" id="dashStockFini" style="margin-top:10px;"></div>
       </div>
 
       <!-- min-height : cette carte se remplit après la lecture Firestore et
@@ -314,14 +323,23 @@
         <div id="dashBackupStatus" style="font-size:0.85rem; color:var(--encre-doux);">—</div>
       </div>
 
-      <div class="carte" style="max-width:900px;">
-        <h2 style="color:var(--accent); margin-bottom:10px; font-size:1.1rem;">📈 Historique (30 derniers jours)</h2>
-        <p style="font-size:0.8rem; color:var(--encre-doux); margin-bottom:10px;">Un jour est ajouté à l'historique à chaque clic sur "Clôturer la journée" (onglet Recettes).</p>
-        <div style="overflow-x:auto;">
-          <table>
-            <thead><tr><th>Date</th><th>Pièces</th><th>C.A.</th><th>Marge</th><th>Taux</th></tr></thead>
-            <tbody id="corpsHistorique"><tr><td colspan="5" style="text-align:center; color:var(--encre-doux);">Chargement...</td></tr></tbody>
-          </table>
+      <!-- Liseré bleu : information de suivi, ni action ni alerte.
+           Fermé par défaut : on ne consulte l'historique que ponctuellement,
+           et son tableau est le plus long du tableau de bord. -->
+      <div class="carte" style="max-width:900px; border-left:5px solid #2563eb;">
+        <h2 style="color:var(--accent); margin:0; font-size:1.1rem; display:flex; justify-content:space-between; align-items:center; cursor:pointer;"
+            onclick="toggleBloc('blocHistorique', 'iconeHistorique')">
+          <span>📈 Historique (30 derniers jours)</span>
+          <span id="iconeHistorique" style="color:var(--encre-doux); font-size:0.9rem;">▼</span>
+        </h2>
+        <div class="bloc-repliable" id="blocHistorique" style="margin-top:10px;">
+          <p style="font-size:0.8rem; color:var(--encre-doux); margin-bottom:10px;">Un jour est ajouté à l'historique à chaque clic sur "Clôturer la journée" (onglet Recettes).</p>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead><tr><th>Date</th><th>Pièces</th><th>C.A.</th><th>Marge</th><th>Taux</th></tr></thead>
+              <tbody id="corpsHistorique"><tr><td colspan="5" style="text-align:center; color:var(--encre-doux);">Chargement...</td></tr></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </section>
