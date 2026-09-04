@@ -2422,8 +2422,15 @@
     function ouvrirRecette(nom) {
         ongletActifPains = nom;
         afficherRecettesPains();
-        const ancre = document.getElementById('ancreDetailPain');
-        if (ancre) ancre.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        /* Le défilement attend deux images : afficherRecettesPains() vient de
+           réécrire les onglets, la synthèse des bases et la recette, tous
+           au-dessus ou autour de la cible. Sans cette attente, la position
+           est calculée sur la mise en page d'avant, et l'écart grandit à
+           mesure que les onglets se multiplient et passent à la ligne. */
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            const ancre = document.getElementById('ancreDetailPain');
+            if (ancre) ancre.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }));
     }
 
     function afficherRecettesPains() {
@@ -2612,7 +2619,7 @@
             : `Commandes boutique : ${qteBoutique(fiche)} · Ajouts : ${quantitesCommandes[fiche.nom] || 0} · <strong>À peser : ${qte}</strong>`;
 
         div.innerHTML = `
-            <div id="ancreDetailPain" style="scroll-margin-top:12px"></div>
+            <div id="ancreDetailPain" style="scroll-margin-top:16px"></div>
             <h2 style="color:var(--accent); margin-bottom:10px;">${fiche.nom}</h2>
             ${controleLots}
             ${tablesPrincipales}
