@@ -227,6 +227,24 @@
       main { padding: 12px; padding-bottom: 90px; }
       .table-lecture { font-size: 0.95rem; }
       .table-lecture td { padding: 6px 5px; }
+
+      /* Bandeau escamotable — un glissement latéral (gauche ou droite)
+         n'importe où sur la page bascule l'affichage. On masque tout le
+         bandeau : titre, connexion admin et onglets. L'état est mémorisé
+         dans localStorage, comme les autres panneaux de l'ERP.
+         max-height plutôt que display:none pour garder la transition. */
+      nav {
+        overflow: hidden;
+        max-height: 300px;
+        transition: max-height 0.25s ease, padding 0.25s ease,
+                    border-bottom-width 0.25s ease;
+      }
+      body.nav-masque nav {
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        border-bottom-width: 0;
+      }
     }
 </style>
 
@@ -3435,6 +3453,65 @@
         // et que 5h ou le remplissage des Ajouts arrive pendant ce temps.
         setInterval(verifierRappelPesee, 15 * 60 * 1000);
     });
+
+    /* ==========================================================
+       BANDEAU ESCAMOTABLE (téléphone uniquement)
+       Un glissement latéral, gauche ou droite, n'importe où sur la page
+       masque ou réaffiche le bandeau du haut (titre, connexion, onglets).
+       Le geste horizontal ne sert à rien d'autre sur cette page, donc
+       aucun risque de conflit avec le défilement vertical.
+       ========================================================== */
+    (function bandeauEscamotable() {
+      const MOBILE = () => window.matchMedia('(max-width: 768px)').matches;
+      const CLE = 'erp_nav_masque';
+
+      // Seuils : 60px de déplacement horizontal minimum, et il doit
+      // dominer le vertical (sinon c'est un scroll qui a dévié).
+      const SEUIL = 60;
+
+      function appliquer(masque) {
+        document.body.classList.toggle('nav-masque', masque);
+        try { localStorage.setItem(CLE, masque ? '1' : '0'); } catch (e) {}
+      }
+
+      // État mémorisé, restauré au chargement.
+      try {
+        if (localStorage.getItem(CLE) === '1') {
+          document.body.classList.add('nav-masque');
+        }
+      } catch (e) {}
+
+      let x0 = 0, y0 = 0, valide = false;
+
+      document.addEventListener('touchstart', (e) => {
+        // Un seul doigt : on ignore les gestes à deux doigts.
+        valide = MOBILE() && e.touches.length === 1;
+        if (!valide) return;
+        x0 = e.touches[0].clientX;
+        y0 = e.touches[0].clientY;
+      }, { passive: true });
+
+      document.addEventListener('touchend', (e) => {
+        if (!valide) return;
+        valide = false;
+        const t = e.changedTouches[0];
+        if (!t) return;
+        const dx = t.clientX - x0;
+        const dy = t.clientY - y0;
+        if (Math.abs(dx) < SEUIL) return;
+        if (Math.abs(dx) < Math.abs(dy) * 1.5) return;   // trop vertical
+        appliquer(!document.body.classList.contains('nav-masque'));
+      }, { passive: true });
+
+      // Retour sur grand écran : on repart d'un bandeau visible, sinon
+      // la barre latérale resterait masquée sans moyen de la rouvrir.
+      window.addEventListener('resize', () => {
+        if (!MOBILE()) document.body.classList.remove('nav-masque');
+        else if (localStorage.getItem(CLE) === '1') {
+          document.body.classList.add('nav-masque');
+        }
+      });
+    })();
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js');
