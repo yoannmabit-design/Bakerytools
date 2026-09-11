@@ -177,7 +177,16 @@
     .supplement-tardif .qte-cell { background: #fbe3d0 !important; }
     .carte-tardive { border: 2px dashed #b05a2f; background: #fff8ef; }
     .carte-tardive h2 { color: #b05a2f; }
-
+    /* Lisible à bout de bras, avec les mains prises */
+    .sg-table { width:100%; border-collapse:collapse; }
+    .sg-table td, .sg-table th { padding:12px 6px; border-bottom:1px solid var(--bordure); }
+    .sg-table .sg-qte { text-align:right; font-weight:700; font-size:1.25rem; color:var(--accent); white-space:nowrap; }
+    .sg-table .sg-nom { font-size:1rem; }
+    .sg-ligne-faite { opacity:0.35; text-decoration:line-through; }
+    .sg-ligne-premix td { background:var(--surbrillance, #fef8f1); font-weight:700; }
+    .btn-preset.sg-actif { background:var(--accent); color:#fff; }
+    .sg-warn { background:#fff4e5; border-left:3px solid #d97724; padding:10px;
+               border-radius:6px; font-size:0.8rem; margin-top:10px; }
     /* ===== Sans Gluten ===== */
     .btn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 8px; }
     .btn-preset { padding: 10px 4px; background: var(--creme); border: 1px solid var(--trait); border-radius: 8px; font-weight: 700; font-size: 0.9rem; color: var(--accent); text-align: center; cursor: pointer; }
@@ -403,33 +412,19 @@
       <button class="btn" style="background:#16a34a; font-size:1rem; padding:14px 20px; width:100%; max-width:900px; margin-top:15px; box-shadow:0 2px 8px rgba(22,163,74,0.3);" onclick="confirmerProductionDuJour()">✅ Clôturer la journée (historique CA/marge, remise à zéro)</button>
     </section>
 
-    <!-- ============ SANS GLUTEN ============ -->
+        <!-- ============ SANS GLUTEN ============ -->
     <section id="section-sans-gluten" class="section">
       <h1>🌾 Production Pain Sans Gluten</h1>
-      <p class="sous-titre">Pâtons de <strong>475 g cru</strong> (~400 g cuit). Workflow indépendant des pains classiques.</p>
+      <p class="sous-titre">Lecture seule — les recettes se modifient dans <strong>Fiches techniques</strong>.</p>
 
       <div class="carte">
-        <h2 style="color:var(--accent); margin-bottom:12px; font-size:1.1rem;">⚙️ Réglages</h2>
-
         <div style="margin-bottom:12px;">
-          <label style="display:block; font-weight:600; font-size:0.85rem; margin-bottom:4px;">Type de Pain :</label>
-          <select id="breadType" onchange="calculerSansGluten()">
-            <option value="neutre">Pain neutre</option>
-            <option value="fibres">Pain fibres</option>
-          </select>
+          <label style="display:block; font-weight:600; font-size:0.85rem; margin-bottom:4px;">Pain :</label>
+          <select id="sgPain" onchange="calculerSansGluten()"></select>
         </div>
 
         <div style="margin-bottom:12px;">
-          <label style="display:block; font-weight:600; font-size:0.85rem; margin-bottom:4px;">Liant (Gommes) :</label>
-          <select id="gumType" onchange="calculerSansGluten()">
-            <option value="mix">Mix 50/50 (Guar + Xanthane)</option>
-            <option value="guar">100% Gomme de Guar</option>
-            <option value="xanthane">100% Gomme Xanthane</option>
-          </select>
-        </div>
-
-        <div style="margin-bottom:12px;">
-          <label style="display:block; font-weight:600; font-size:0.85rem; margin-bottom:4px;">Nombre de Pains :</label>
+          <label style="display:block; font-weight:600; font-size:0.85rem; margin-bottom:4px;">Nombre de pains :</label>
           <input type="number" id="loafCount" value="4" min="1" inputmode="numeric" oninput="calculerSansGluten()">
         </div>
 
@@ -441,39 +436,64 @@
         </div>
 
         <div class="totals-summary">
-          <div>Cru : <strong id="totalDoughWeight" class="val-droite">1900</strong> g</div>
-          <div>Cuit : ~<strong id="totalBakedWeight" class="val-droite">1615</strong> g</div>
+          <div>Cru : <strong id="totalDoughWeight" class="val-droite">0</strong> g</div>
+          <div>Cuit : ~<strong id="totalBakedWeight" class="val-droite">0</strong> g</div>
+        </div>
+      </div>
+
+      <!-- Bascule : un seul jeu de chiffres à l'écran selon ce qu'on fait -->
+      <div class="carte" style="padding:6px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+          <div class="btn-preset" id="sgOngletFournee" onclick="sgMode('fournee')">🥣 Fournée</div>
+          <div class="btn-preset" id="sgOngletSeau" onclick="sgMode('seau')">🪣 Seau</div>
+        </div>
+      </div>
+
+      <!-- ===== Mode Fournée ===== -->
+      <div id="sgVueFournee">
+        <div class="carte">
+          <h2 style="color:var(--accent); margin-bottom:12px; font-size:1.1rem;">🥣 À peser</h2>
+          <table class="sg-table"><tbody id="sgPesee"></tbody></table>
+          <p style="font-size:0.75rem; color:var(--encre-doux); margin-top:8px;">
+            Touchez une ligne pour la barrer. Remis à zéro au rechargement.
+          </p>
+        </div>
+
+        <div class="carte">
+          <h2 style="color:var(--accent); margin-bottom:12px; font-size:1.1rem;">
+            📦 Détail du prémix <span id="sgNomPremix" style="font-weight:400; font-size:0.85rem;"></span>
+          </h2>
+          <table class="sg-table"><tbody id="sgPremixFournee"></tbody></table>
+          <p style="font-size:0.75rem; color:var(--encre-doux); margin-top:8px;">
+            Pour information — ces quantités sont déjà comprises dans le prémix pesé ci-dessus.
+          </p>
+        </div>
+      </div>
+
+      <!-- ===== Mode Seau ===== -->
+      <div id="sgVueSeau" style="display:none;">
+        <div class="carte">
+          <h2 style="color:var(--accent); margin-bottom:12px; font-size:1.1rem;">
+            🪣 <span id="sgTitreSeau">Seau</span>
+          </h2>
+          <table class="sg-table">
+            <thead><tr><th>Composition</th><th style="text-align:center">%</th><th style="text-align:right">Seau</th></tr></thead>
+            <tbody id="sgSeau"></tbody>
+          </table>
         </div>
       </div>
 
       <div class="carte">
-        <h2 style="color:var(--accent); margin-bottom:12px; font-size:1.1rem;">🥣 À Peser (Pétrissage)</h2>
-        <table>
-          <thead><tr><th>Ingrédient</th><th style="text-align:right">Quantité</th></tr></thead>
-          <tbody>
-            <tr class="highlight"><td>📦 <strong>Premix Sec</strong></td><td class="val-droite" id="premixWeight">0 g</td></tr>
-            <tr><td>💧 Eau tiède (~35°C)</td><td class="val-droite" id="waterWeight">0 g</td></tr>
-            <tr><td>🌿 Psyllium blond</td><td class="val-droite" id="psylliumWeight">0 g</td></tr>
-            <tr><td>🍞 Levure sèche</td><td class="val-droite" id="yeastWeight">0 g</td></tr>
-            <tr><td>🫒 Huile neutre/olive</td><td class="val-droite" id="oilWeight">0 g</td></tr>
-            <tr><td>🍯 Miel / Sucre</td><td class="val-droite" id="honeyWeight">0 g</td></tr>
-            <tr><td>🍏 Vinaigre cidre</td><td class="val-droite" id="vinegarWeight">0 g</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="carte">
-        <h2 style="color:var(--accent); margin-bottom:12px; font-size:1.1rem;">🪣 Seau de Premix (<span id="bucketWeightTitle">2,55 kg</span>)</h2>
-        <table>
-          <thead><tr><th>Composition</th><th style="text-align:center">%</th><th style="text-align:right">Seau</th><th style="text-align:right">Fournée</th></tr></thead>
-          <tbody id="premixDetailTable"></tbody>
-        </table>
-        <div class="info-box">
-          💡 <strong>Procédé :</strong> Diluer le Psyllium dans l'eau tiède (5 min). Ajouter la levure/miel. Verser le Premix et mélanger 3-5 min. Mouler à 475 g.
+        <div class="info-box" id="sgProcede">
+          💡 <strong>Procédé :</strong> Diluer le psyllium dans l'eau tiède (5 min).
+          Ajouter la levure, le miel et le vinaigre. Verser le prémix et l'huile,
+          mélanger 3-5 min. Mouler à <span id="sgPoidsPiece">475</span> g.
         </div>
+        <div id="sgAlerte"></div>
       </div>
     </section>
-
+   
+      
     <!-- ============ INGRÉDIENTS ============ -->
     <section id="section-ingredients" class="section">
       <h1>🏷️ Ingrédients & Prix (₱)</h1>
@@ -2753,117 +2773,170 @@
         });
     }
 
-    /* ==========================================================
-       SECTION SANS GLUTEN — calculateur indépendant
-       ========================================================== */
-    const recettesSansGluten = {
-        neutre: {
-            premix: 220, psyllium: 10, water: 231, yeast: 4, oil: 7, honey: 3, vinegar: 0,
-            bucketTotal: 2547.5,
-            flours: [
-                { name: "Farine de Riz", pct: 39.25, bucket: 1000 },
-                { name: "Fécule (Tapioca / Potato)", pct: 34.35, bucket: 875 },
-                { name: "Farine de Jowar", pct: 24.53, bucket: 625 },
-                { name: "Sel fin", pct: 1.37, bucket: 35 }
-            ]
-        },
-        fibres: {
-            premix: 200, psyllium: 11, water: 247, yeast: 4, oil: 7, honey: 3, vinegar: 3,
-            bucketTotal: 3703.7,
-            flours: [
-                { name: "Farine de Riz complet", pct: 27, bucket: 1000 },
-                { name: "Fécule (Tapioca / Potato)", pct: 18, bucket: 666.7 },
-                { name: "Farine de Bajra", pct: 22.5, bucket: 833.3 },
-                { name: "Farine de Ragi / Besan", pct: 22.5, bucket: 833.3 },
-                { name: "Graines (Lin, Sésame...)", pct: 9, bucket: 333.3 },
-                { name: "Sel fin", pct: 1.4, bucket: 51.9 }
-            ]
+        /* ============================================================
+       SECTION SANS GLUTEN
+       Lit les fiches techniques (catégorie "Sans gluten") au lieu
+       de constantes en dur. Lecture seule : l'édition se fait dans
+       l'onglet Fiches techniques, qui a déjà ses garde-fous.
+       ============================================================ */
+
+    const SG_CATEGORIE = 'Sans gluten';
+    let sgVue = 'fournee';
+    let sgLignesFaites = {};   // volontairement non persisté
+
+    function sgFiches() {
+        return (typeof fichesTechniques !== 'undefined' ? fichesTechniques : [])
+            .filter(f => (f.categorie || '') === SG_CATEGORIE);
+    }
+    function sgPains()  { return sgFiches().filter(f => f.vendable); }
+    function sgFicheParNom(nom) {
+        return sgFiches().find(f => f.nom === nom)
+            || (fichesTechniques || []).find(f => f.nom === nom);
+    }
+
+    // Poids total d'une fiche, et nombre de pièces qu'elle représente.
+    function sgTotal(fiche) {
+        return (fiche.ingredients || []).reduce((s, i) => s + (i.qte || 0), 0);
+    }
+    function sgNbPieces(fiche) {
+        if (fiche.modeSaisie === 'poids' && fiche.poidsPiece > 0) {
+            return sgTotal(fiche) / fiche.poidsPiece;
         }
-    };
+        return fiche.nbPieces || 1;
+    }
 
     function sauvegarderPrefsSansGluten() {
         try {
-            localStorage.setItem('psg_breadType', document.getElementById('breadType').value);
-            localStorage.setItem('psg_gumType', document.getElementById('gumType').value);
+            localStorage.setItem('psg_pain', document.getElementById('sgPain').value);
             localStorage.setItem('psg_loafCount', document.getElementById('loafCount').value);
         } catch (e) {}
     }
 
     function chargerPrefsSansGluten() {
         try {
-            if (localStorage.getItem('psg_breadType')) document.getElementById('breadType').value = localStorage.getItem('psg_breadType');
-            if (localStorage.getItem('psg_gumType')) document.getElementById('gumType').value = localStorage.getItem('psg_gumType');
-            if (localStorage.getItem('psg_loafCount')) document.getElementById('loafCount').value = localStorage.getItem('psg_loafCount');
+            const c = localStorage.getItem('psg_loafCount');
+            if (c) document.getElementById('loafCount').value = c;
         } catch (e) {}
     }
 
-    function setLoaves(count) {
-        document.getElementById('loafCount').value = count;
+    function setLoaves(n) {
+        document.getElementById('loafCount').value = n;
+        sgLignesFaites = {};
         calculerSansGluten();
     }
 
+    function sgMode(vue) {
+        sgVue = vue;
+        document.getElementById('sgVueFournee').style.display = vue === 'fournee' ? '' : 'none';
+        document.getElementById('sgVueSeau').style.display    = vue === 'seau'    ? '' : 'none';
+        document.getElementById('sgOngletFournee').classList.toggle('sg-actif', vue === 'fournee');
+        document.getElementById('sgOngletSeau').classList.toggle('sg-actif', vue === 'seau');
+    }
+
+    function sgBasculerLigne(cle) {
+        sgLignesFaites[cle] = !sgLignesFaites[cle];
+        const tr = document.getElementById('sgl-' + cle);
+        if (tr) tr.classList.toggle('sg-ligne-faite', !!sgLignesFaites[cle]);
+    }
+
+    function sgRemplirSelecteur() {
+        const sel = document.getElementById('sgPain');
+        if (!sel) return;
+        const pains = sgPains();
+        const avant = sel.value || (localStorage.getItem('psg_pain') || '');
+        sel.innerHTML = pains.map(p => `<option value="${p.nom}">${p.nom}</option>`).join('');
+        if (pains.some(p => p.nom === avant)) sel.value = avant;
+    }
+
     function calculerSansGluten() {
-        const type = document.getElementById('breadType').value;
-        const gumOption = document.getElementById('gumType').value;
-        const count = parseFloat(document.getElementById('loafCount').value) || 0;
-        const rec = recettesSansGluten[type];
+        const sel = document.getElementById('sgPain');
+        if (!sel) return;
+        if (!sel.options.length) sgRemplirSelecteur();
 
-        const totalDough = count * 475;
-        const totalBaked = Math.round(totalDough * 0.85);
-
-        document.getElementById('totalDoughWeight').innerText = totalDough;
-        document.getElementById('totalBakedWeight').innerText = totalBaked;
-        document.getElementById('bucketWeightTitle').innerText = rec.bucketTotal === 2547.5 ? "2,55 kg" : "3,70 kg";
-
-        const premixTotal = rec.premix * count;
-        document.getElementById('premixWeight').innerText = premixTotal.toFixed(0) + " g";
-        document.getElementById('waterWeight').innerText = (rec.water * count).toFixed(0) + " g";
-        document.getElementById('psylliumWeight').innerText = (rec.psyllium * count).toFixed(1) + " g";
-        document.getElementById('yeastWeight').innerText = (rec.yeast * count).toFixed(1) + " g";
-        document.getElementById('oilWeight').innerText = (rec.oil * count).toFixed(1) + " g";
-        document.getElementById('honeyWeight').innerText = (rec.honey * count).toFixed(1) + " g";
-        document.getElementById('vinegarWeight').innerText = (rec.vinegar * count).toFixed(1) + " g";
-
-        let premixComp = [...rec.flours];
-
-        if (type === 'neutre') {
-            if (gumOption === 'mix') {
-                premixComp.push({ name: "Guar (50%)", pct: 0.25, bucket: 6.25 });
-                premixComp.push({ name: "Xanthane (50%)", pct: 0.25, bucket: 6.25 });
-            } else if (gumOption === 'guar') {
-                premixComp.push({ name: "Guar (100%)", pct: 0.5, bucket: 12.5 });
-            } else if (gumOption === 'xanthane') {
-                premixComp.push({ name: "Xanthane (100%)", pct: 0.5, bucket: 12.5 });
-            }
-        } else {
-            if (gumOption === 'mix') {
-                premixComp.push({ name: "Guar (50%)", pct: 0.25, bucket: 9.25 });
-                premixComp.push({ name: "Xanthane (50%)", pct: 0.25, bucket: 9.25 });
-            } else if (gumOption === 'guar') {
-                premixComp.push({ name: "Guar (100%)", pct: 0.5, bucket: 18.5 });
-            } else if (gumOption === 'xanthane') {
-                premixComp.push({ name: "Xanthane (100%)", pct: 0.5, bucket: 18.5 });
-            }
+        const alerte = document.getElementById('sgAlerte');
+        const pain = sgFicheParNom(sel.value);
+        if (!pain) {
+            alerte.innerHTML = '<div class="sg-warn">Aucune fiche vendable en catégorie « '
+                + SG_CATEGORIE + ' ». Créez-la dans Fiches techniques.</div>';
+            return;
         }
 
-        const tbody = document.getElementById('premixDetailTable');
-        tbody.innerHTML = '';
-        premixComp.forEach(item => {
-            const row = document.createElement('tr');
-            const usedInBatch = (premixTotal * (item.bucket / rec.bucketTotal)).toFixed(1);
-            row.innerHTML = `
-                <td>${item.name}</td>
-                <td style="text-align:center">${item.pct.toFixed(1)}%</td>
-                <td style="text-align:right; font-weight:600">${item.bucket.toFixed(0)} g</td>
-                <td style="text-align:right; color:#b05a2f; font-weight:700">${usedInBatch} g</td>
-            `;
-            tbody.appendChild(row);
+        const nb = parseFloat(document.getElementById('loafCount').value) || 0;
+        const pieces = sgNbPieces(pain);
+        const poidsPiece = pain.poidsPiece || 475;
+        const facteur = pieces > 0 ? nb / pieces : 0;   // fiche -> fournée demandée
+
+        document.getElementById('totalDoughWeight').innerText = Math.round(nb * poidsPiece);
+        document.getElementById('totalBakedWeight').innerText = Math.round(nb * poidsPiece * 0.85);
+        document.getElementById('sgPoidsPiece').innerText = poidsPiece;
+
+        // --- Tableau de pesée ---
+        const corps = document.getElementById('sgPesee');
+        corps.innerHTML = '';
+        let premixNom = null, premixQte = 0;
+
+        (pain.ingredients || []).forEach((ing, i) => {
+            const q = (ing.qte || 0) * facteur;
+            if (ing.type === 'composite') { premixNom = ing.nom; premixQte = q; }
+            const cle = 'p' + i;
+            const tr = document.createElement('tr');
+            tr.id = 'sgl-' + cle;
+            tr.onclick = () => sgBasculerLigne(cle);
+            if (sgLignesFaites[cle]) tr.className = 'sg-ligne-faite';
+            if (ing.type === 'composite') tr.className += ' sg-ligne-premix';
+            tr.innerHTML = `<td class="sg-nom">${ing.type === 'composite' ? '📦 ' : ''}${ing.nom}</td>`
+                         + `<td class="sg-qte">${q.toFixed(q < 20 ? 1 : 0)} g</td>`;
+            corps.appendChild(tr);
         });
 
-        document.querySelectorAll('.btn-preset').forEach(btn => {
-            btn.classList.toggle('actif', parseInt(btn.textContent) === count);
-        });
+        // --- Contrôles de cohérence ---
+        const messages = [];
+        const totalFiche = sgTotal(pain);
+        if (pain.modeSaisie === 'poids' && Math.abs(pieces - Math.round(pieces)) > 0.005) {
+            messages.push(`La fiche totalise ${totalFiche.toFixed(0)} g, soit ${pieces.toFixed(2)} pièces `
+                        + `de ${poidsPiece} g. Une ligne est probablement manquante ou fausse.`);
+        }
 
+        // --- Prémix ---
+        const premix = premixNom ? sgFicheParNom(premixNom) : null;
+        document.getElementById('sgNomPremix').innerText = premixNom ? '· ' + premixNom : '';
+        const seauCorps = document.getElementById('sgSeau');
+        const fourCorps = document.getElementById('sgPremixFournee');
+        seauCorps.innerHTML = '';
+        fourCorps.innerHTML = '';
+
+        if (!premix) {
+            if (premixNom) messages.push(`Le prémix « ${premixNom} » est introuvable : `
+                                       + `vérifiez que le nom de la fiche correspond exactement.`);
+            document.getElementById('sgTitreSeau').innerText = 'Seau';
+        } else {
+            const totalSeau = sgTotal(premix);
+            document.getElementById('sgTitreSeau').innerText =
+                premix.nom + ' — ' + (totalSeau / 1000).toFixed(2).replace('.', ',') + ' kg';
+
+            (premix.ingredients || []).forEach((ing, i) => {
+                const part = totalSeau > 0 ? (ing.qte || 0) / totalSeau : 0;
+
+                const trS = document.createElement('tr');
+                trS.innerHTML = `<td class="sg-nom">${ing.nom}</td>`
+                              + `<td style="text-align:center">${(part * 100).toFixed(2)} %</td>`
+                              + `<td class="sg-qte">${(ing.qte || 0).toFixed(1)} g</td>`;
+                seauCorps.appendChild(trS);
+
+                const cle = 'x' + i;
+                const qf = premixQte * part;
+                const trF = document.createElement('tr');
+                trF.id = 'sgl-' + cle;
+                trF.onclick = () => sgBasculerLigne(cle);
+                if (sgLignesFaites[cle]) trF.className = 'sg-ligne-faite';
+                trF.innerHTML = `<td class="sg-nom">${ing.nom}</td>`
+                              + `<td class="sg-qte">${qf.toFixed(qf < 20 ? 1 : 0)} g</td>`;
+                fourCorps.appendChild(trF);
+            });
+        }
+
+        alerte.innerHTML = messages.map(m => `<div class="sg-warn">⚠️ ${m}</div>`).join('');
+        sgMode(sgVue);
         sauvegarderPrefsSansGluten();
     }
 
