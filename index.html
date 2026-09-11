@@ -1608,6 +1608,7 @@
             document.getElementById('statusBarCouts').textContent = "⚠️ Firebase indisponible — fiches non chargées";
             afficherFichesCouts();
             afficherRecettesPains();
+                        if (typeof sgRemplirSelecteur === 'function') { sgRemplirSelecteur(); calculerSansGluten(); }
             if (typeof afficherCommandes === 'function') afficherCommandes();
             return;
         }
@@ -1640,6 +1641,7 @@
             }
             afficherFichesCouts();
             afficherRecettesPains();
+                        if (typeof sgRemplirSelecteur === 'function') { sgRemplirSelecteur(); calculerSansGluten(); }
             if (typeof afficherCommandes === 'function') afficherCommandes();
         }, (err) => {
             document.getElementById('statusBarCouts').textContent = "⚡ Mode Hors-Ligne (données locales)";
